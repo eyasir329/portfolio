@@ -1,0 +1,1161 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+ul{
+    list-style: none;
+}
+
+a{
+    text-decoration: none;
+}
+/*============================
+      common css end
+==============================*/
+
+.navi-bg{
+    width: 100%;
+    height: 40px;
+    position: absolute;
+    z-index: 4;
+}
+
+.navi-bg .navi-con{
+    width: 960px;
+    height: 40px;
+    margin: 0 auto;
+}
+
+.navi-bg .navi-con ul{
+    margin-left: 350px;
+}
+
+.navi-bg .navi-con li{
+   float: left; 
+}
+
+.navi-bg .navi-con li img{
+    width: 30px;
+    height: 30px;
+    padding-top: 5px;
+    border-right: 50%;
+}
+
+.navi-bg .navi-con li a{
+    margin-left: 20px;
+}
+
+.navi-bg .navi-con li a:hover > img{
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+}
+
+/*============================
+      navigation css end
+==============================*/
+
+.banner-bg{
+    width: 100%;
+    height: 900px;
+    background: url(../images/banner1.jpg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    position: relative;
+}
+
+.banner-bg .banner-overlay{
+    width: 100%;
+    height: 900px;
+    background: rgba(69, 82, 73, 0.59);
+}
+
+.banner-bg .banner-overlay .banner-con{
+    width: 100%;
+    height: 860px;
+    margin-top: 40px;
+    position: absolute;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main{
+    width: 960px;
+    height: 860px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-pic{
+    width: 380px;
+    height: 100%;
+    float: left;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-pic .pro{
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background-color: rgba(0, 128, 113, 0.25);
+    margin-top: 200px;
+    border: 5px solid rgba(69, 82, 73, 0.59);
+    margin-left: 100px;
+    animation: bord 10s linear infinite;
+    animation-fill-mode: both;
+}
+@keyframes bord{
+    0%{
+        background-color: red;
+    }
+    25%{
+        background-color: green;
+    }
+    50%{
+        background-color: blue;
+    }
+    75%{
+        background-color: green;
+    }
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-pic .menu-bar{
+    height: 40px;
+    position: absolute;
+    z-index: 10;
+    top: 600px;
+    left: 120px;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-pic .menu-bar ul li{
+   float: left;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a{
+    color: #b49696;
+    text-transform: capitalize;
+    display: block;
+    width: 120px;
+    height: 40px;
+    font-size: 25px;
+    font-family: Adobe Devanagari;
+    border: 1px solid rgba(154, 96, 96, 0.22);
+    line-height: 40px;
+    margin-left: 20px;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a img{
+    height: 30px;
+    width: 30px;
+    display: block;
+    float: left;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a span{
+    display: block;
+    float: right;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a .ab{
+    color: white;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a span:hover{
+    color: white;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .menu-bar ul li a .ab:hover{
+    color: #b49696;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-animation{
+    width: 580px;
+    height: 100%;
+    float: right;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-animation h1{
+    font-family: Adobe Devanagari;
+    font-size: 70px;
+    color: white;
+    padding-top: 250px;
+}
+
+.banner-bg .banner-overlay .banner-con .banner-main .profile-animation h2{
+    font-size: 50px;
+    position: relative;
+    color: #252839;
+    -webkit-text-stroke: 2px #aeb5d4;
+    text-transform: capitalize;  
+}
+
+h2::before{
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    color: #01fe87;
+    -webkit-text-stroke: 0.01vw #383d52;
+    border-width: 2px solid #01fe87;
+    overflow: hidden;
+    animation: animate 6s linear infinite;
+    animation-fill-mode: forwards;
+}
+@keyframes animate{
+    0%{
+        width: 0;
+    }
+    20%{
+        width: 50%;
+    }
+    40%{
+        width: 100%;
+    }
+    60%{
+        width: 0%;
+    }
+    80%{
+        width: 50%;
+    }
+    100%{
+        width: 100%;
+    }
+}
+
+/*============================
+      banner css end
+==============================*/
+.about-bg{
+    width: 100%;
+    height: 700px;
+    background: white;
+    margin-top: 100px;
+}
+
+.about-bg .about-con{
+    width: 960px;
+    height: 800px;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.about-bg .about-con .para1{
+    width: 960px;
+    height: 200px;
+}
+
+.about-bg .about-con .para1 h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.about-bg .about-con .para1 hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.about-bg .about-con .para1 p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.about-bg .about-con .about-con{
+    width: 960px;
+    height: 600px;
+}
+
+.about-bg .about-con .about-con .left-con{
+    width: 400px;
+    height: 600px;
+    float: left;
+}
+
+.about-bg .about-con .about-con .left-con img{
+    width: 350px;
+}
+
+.about-bg .about-con .about-con .right-con{
+    width: 560px;
+    height: 600px;
+    float: right;
+}
+
+.about-bg .about-con .about-con .right-con h3{
+    font-size: 40px;
+    font-family: Adobe Devanagari;
+    color: #01fe87;
+}
+
+.about-bg .about-con .about-con .right-con p{
+    font-size: 20px;
+}
+
+.about-bg .about-con .about-con .right-con .list{
+    height: 250px;
+    width: 560px;
+    padding-top: 30px;
+}
+
+.about-bg .about-con .about-con .right-con .list .left-list{
+    height: 250px;
+    width: 280px;
+    float: left;
+    padding-left: 15px;
+}
+
+.about-bg .about-con .about-con .right-con .list .left-list ul li{
+    list-style-type: circle;
+    padding-bottom: 30px;
+}
+.about-bg .about-con .about-con .right-con .list .left-list ul li strong{
+    font-size: 20px;
+}
+
+.about-bg .about-con .about-con .right-con .list .right-list{
+    height: 250px;
+    width: 280px;
+    float: right;
+    padding-left: 20px;
+}
+
+.about-bg .about-con .about-con .right-con .list .right-list ul li{
+    list-style: circle;
+    padding-bottom: 30px;
+}
+.about-bg .about-con .about-con .right-con .list .right-list ul li strong{
+    font-size: 20px;
+}
+
+
+/*============================
+      about css end
+==============================*/
+
+.fact-bg{
+    width: 100%;
+    height: 600px;
+    margin-top: 100px;
+}
+
+.fact-bg .fact-content{
+    width: 960px;
+    height: 600px;
+    margin: 0 auto;
+}
+
+.fact-bg .fact-content h2{
+    font-size: 60px;
+    color: #01fe87;
+    padding-top: 100px;
+}
+
+.fact-bg .fact-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.fact-bg .fact-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.fact-bg .fact-content .facts-main{
+    width: 100%;
+    height: 300px;
+    margin-top: 50px;
+}
+
+.fact-bg .fact-content .facts-main .main-1{
+    width: 240px;
+    height: 300px;
+    float: left;
+}
+
+.fact-bg .fact-content .facts-main .main-2{
+    width: 240px;
+    height: 300px;
+    float: left;
+}
+
+.fact-bg .fact-content .facts-main .main-3{
+    width: 240px;
+    height: 300px;
+    float: left;
+}
+
+.fact-bg .fact-content .facts-main .main-4{
+    width: 240px;
+    height: 300px;
+    float: left;
+}
+
+.fact-bg .fact-content .facts-main .main .happy{
+  font-weight: bold;
+  font-size: 20px;
+  color: #01fe87;
+}
+
+.fact-bg .fact-content .facts-main img{
+    display: block;
+    float: left;
+}
+
+.fact-bg .fact-content .facts-main h1{
+    display: block;
+    float: right;
+    margin-right: 100px;
+    font-size: 50px;
+}
+
+.fact-bg .fact-content .facts-main p{
+    padding-left: 70px;
+}
+
+.fact-bg .fact-content .facts-main .main{
+    padding-top: 20px;
+}
+
+/*============================
+      facts css end
+==============================*/
+
+.skills-bg{
+    width: 100%;
+    height: 700px;
+}
+
+.skills-bg .skills-content{
+    width: 960px;
+    height: 700px;
+    margin: 0 auto;
+}
+
+.skills-bg .skills-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.skills-bg .skills-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.skills-bg .skills-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.skills-bg .skills-content .skills-main{
+    height: 450px;
+    margin-top: 50px;
+}
+
+.skills-bg .skills-content .skills-main .con{
+    height: 450px;
+    width: 20%;
+    float: left;
+}
+
+.skills-bg .skills-content .skills-main .con ul{
+    margin-top: 25px;
+}
+
+.skills-bg .skills-content .skills-main .con ul li{
+    font-size: 20px;
+    padding-bottom: 30px;
+    font-weight: bold;
+}
+
+.skills-bg .skills-content .skills-main .box{
+    height: 450px;
+    width: 60%;
+    float: left;
+}
+
+.skills-bg .skills-content .skills-main .box ul{
+    margin-top: 25px;
+}
+
+.skills-bg .skills-content .skills-main .box ul li{
+    margin-bottom: 30px;
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box-con{
+    width: 100%;
+    height: 24px;
+    background: #01fe87;
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box1{
+   animation: box-ani-1 3s linear;
+   animation-fill-mode: forwards; 
+}
+@keyframes box-ani-1{
+    0%{
+        width: 0%;
+    }
+    25%{
+        width: 25%;
+    }
+    50%{
+        width: 50%;
+    }
+    75%{
+        width: 75%;
+    }
+    100%{
+        width: 96%;
+    }
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box2{
+   animation: box-ani-2 3s linear;
+   animation-fill-mode: forwards; 
+}
+@keyframes box-ani-2{
+    0%{
+        width: 0%;
+    }
+    25%{
+        width: 20%;
+    }
+    50%{
+        width: 40%;
+    }
+    75%{
+        width: 60%;
+    }
+    100%{
+        width: 80%;
+    }
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box3,.box4,.box5,.box6{
+   animation: box-ani-3 3s linear;
+   animation-fill-mode: forwards; 
+}
+@keyframes box-ani-3{
+    0%{
+        width: 0%;
+    }
+    25%{
+        width: 2%;
+    }
+    50%{
+        width: 5%;
+    }
+    75%{
+        width: 8%;
+    }
+    100%{
+        width: 10%;
+    }
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box7{
+   animation: box-ani-7 3s linear;
+   animation-fill-mode: forwards; 
+}
+@keyframes box-ani-7{
+    0%{
+        width: 0%;
+    }
+    25%{
+        width: 10%;
+    }
+    50%{
+        width: 20%;
+    }
+    75%{
+        width: 30%;
+    }
+    100%{
+        width: 40%;
+    }
+}
+
+.skills-bg .skills-content .skills-main .box ul li .box8{
+   animation: box-ani-8 3s linear;
+   animation-fill-mode: forwards; 
+}
+@keyframes box-ani-8{
+    0%{
+        width: 0%;
+    }
+    25%{
+        width: 8%;
+    }
+    50%{
+        width: 15%;
+    }
+    75%{
+        width: 24%;
+    }
+    100%{
+        width: 30%;
+    }
+}
+
+.skills-bg .skills-content .skills-main .con-2{
+    height: 450px;
+    width: 20%;
+    float: left;
+    padding-left: 20px;
+}
+
+
+/*============================
+      skills css end
+==============================*/
+
+.resume-bg{
+    width: 100%;
+    height: 1200px;
+    margin-top: 100px;
+}
+
+.resume-bg .resume-content{
+    width: 960px;
+    height: 1200px;
+    margin: 0 auto;
+}
+
+.resume-bg .resume-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.resume-bg .resume-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.resume-bg .resume-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.resume-bg .resume-content .resume-main{
+    height: 800px;
+    width: 100%;
+    margin-top: 50px;
+}
+.resume-bg .resume-content .resume-main .head3 h3{
+    font-size: 40px;
+}
+
+.resume-bg .resume-content .resume-main .left-resume{
+    height: 900px;
+    width: 50%;
+    float: left;
+}
+.resume-bg .resume-content .resume-main .left-resume .year{
+    background: rgba(128, 128, 128, 0.24);
+    width: 150px;
+    padding: 5px 10px;
+    text-align: center;
+}
+.resume-bg .resume-content .resume-main .left-resume h4{
+    font-size: 20px;
+    padding-top: 20px;
+    text-transform: uppercase;
+    font-family: cursive;
+}
+.resume-bg .resume-content .resume-main .left-resume h4 img{
+    height: 20px;
+}
+.resume-bg .resume-content .resume-main .left-resume .eya,.eya-1{
+    border-left: 4px solid #01fe87;
+    padding-left: 25px;
+    margin-top: 10px;
+    font-size: 20px;
+    color: #312929;
+    margin-left: 8px;
+}
+
+.resume-bg .resume-content .resume-main .left-resume .eya ul{
+    list-style-type: disc;
+    margin-left: 25px;
+    font-size: 20px;
+    margin-top: 20px;
+}
+
+.resume-bg .resume-content .resume-main .right-resume{
+    height: 900px;
+    width: 50%;
+    float: right;
+}
+
+.resume-bg .resume-content .resume-main .right-resume h4 img{
+    height: 20px;
+}
+
+.resume-bg .resume-content .resume-main .right-resume h4{
+    font-size: 20px;
+    padding-top: 20px;
+    text-transform: uppercase;
+    font-family: cursive;
+}
+
+.resume-bg .resume-content .resume-main .right-resume .year{
+    background: rgba(128, 128, 128, 0.24);
+    width: 150px;
+    padding: 5px 10px;
+    text-align: center;
+}
+
+.resume-bg .resume-content .resume-main .right-resume ul{
+    list-style-type: disc;
+    margin-left: 25px;
+    font-size: 20px;
+    margin-top: 20px;
+}
+
+.resume-bg .resume-content .resume-main .right-resume ul li{
+    margin-bottom: 10px;
+}
+
+/*============================
+      resume css end
+==============================*/
+
+.portfolio-bg{
+    width: 100%;
+    height: 1200px;
+}
+
+.portfolio-bg .portfolio-content{
+    width: 960px;
+    height: 1200px;
+    margin: 0 auto;
+}
+
+.portfolio-bg .portfolio-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.portfolio-bg .portfolio-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.portfolio-bg .portfolio-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.portfolio-bg .portfolio-content .port-bar{
+    width: 600px;
+    height: 50px;
+    background: rgba(240, 230, 230, 0.49);
+    border-radius: 30px;
+    margin: 50px auto 0;
+    margin-bottom: 20px;
+}
+
+.portfolio-bg .portfolio-content .port-bar ul{
+    margin-left: 25px;
+}
+
+.portfolio-bg .portfolio-content .port-bar ul li{
+    float: left;
+}
+
+.portfolio-bg .portfolio-content .port-bar ul li a{
+    line-height: 50px;
+    margin-right: 20px;
+    font-size: 21px;
+    color: black;
+}
+.portfolio-bg .portfolio-content .port-bar ul li .all-bar{
+    color: green;
+}
+
+.portfolio-bg .portfolio-content .port-bar ul li a:hover{
+    color: rgba(0, 255, 10, 0.46);
+}
+
+.portfolio-bg .portfolio-content .port-con{
+    width: 960px;
+    height: 810px;
+    position: relative;
+}
+
+.portfolio-bg .portfolio-content .port-con .port{
+    width: 300px;
+    height: 250px;
+    float: left;
+    position: absolute;
+}
+
+.portfolio-bg .portfolio-content .port-con .port img{
+    width: 300px;
+    height: 250px;
+}
+
+.portfolio-bg .portfolio-content .port-con .port2{
+    left: 330px;
+}
+.portfolio-bg .portfolio-content .port-con .port3{
+    left: 660px;
+}
+.portfolio-bg .portfolio-content .port-con .port4,.port5,.port6{
+    top: 280px;
+}
+.portfolio-bg .portfolio-content .port-con .port5{
+    left: 330px;
+}
+.portfolio-bg .portfolio-content .port-con .port6{
+    left: 660px;
+}
+
+.portfolio-bg .portfolio-content .port-con .port7,.port8,.port9{
+    top: 560px;
+}
+.portfolio-bg .portfolio-content .port-con .port8{
+    left: 330px;
+}
+.portfolio-bg .portfolio-content .port-con .port9{
+    left: 660px;
+}
+
+.portfolio-bg .portfolio-content .port-con .port .port-overlay{
+    width: 100%;
+    height: 0%;
+    background: rgba(195, 173, 173, 0.42);
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: all linear 0.6s;
+}
+.portfolio-bg .portfolio-content .port-con .port .port-overlay img{
+    width: 95px;
+    height: 85px;
+    margin-top: 80px;
+    margin-left: 100px;
+    display: block;
+    opacity: 0;
+}
+.portfolio-bg .portfolio-content .port-con .port:hover .port-overlay{
+    height: 100%;
+}
+.portfolio-bg .portfolio-content .port-con .port:hover .port-overlay img{
+    opacity: 1;
+}
+
+
+
+/*============================
+      portfolio css end
+==============================*/
+
+.services-bg{
+    width: 100%;
+    height: 900px;
+}
+
+.services-bg .services-content{
+    width: 960px;
+    height: 900px;
+    margin: 0 auto;
+}
+
+.services-bg .services-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.services-bg .services-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.services-bg .services-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.services-bg .services-content .service-con{
+    width: 960px;
+    height: 560px;
+    position: relative;
+    margin-top: 80px;
+}
+
+.services-bg .services-content .service-con .service{
+    width: 300px;
+    height: 250px;
+    float: left;
+    position: absolute;
+}
+
+.services-bg .services-content .service-con .service2{
+    left: 330px;
+}
+.services-bg .services-content .service-con .service3{
+    left: 660px;
+}
+.services-bg .services-content .service-con .service4,.service5,.service6{
+    top: 280px;
+}
+.services-bg .services-content .service-con .service5{
+    left: 330px;
+}
+.services-bg .services-content .service-con .service6{
+    left: 660px;
+}
+
+.services-bg .services-content .service-con .service img{
+    display: block;
+    float: left;
+    border-radius: 100%;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+}
+
+.services-bg .services-content .service-con .service:hover img{
+    background: #01fe87;
+}
+
+.services-bg .services-content .service-con .service .con-ser{
+    width: 200px;
+    float: right;
+    padding-left: 5px;
+    margin-left: 20px;
+}
+.services-bg .services-content .service-con .service .con-ser h5{
+    font-size: 30px;
+    padding-top: 10px;
+}
+
+
+/*============================
+      services css end
+==============================*/
+
+.testimonials-bg{
+    width: 100%;
+    height: 700px;
+}
+
+.testimonials-bg .testimonials-content{
+    width: 960px;
+    height: 700px;
+    margin: 0 auto;
+}
+
+.testimonials-bg .testimonials-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.testimonials-bg .testimonials-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.testimonials-bg .testimonials-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.testimonials-bg .testimonials-content .test-com{
+    width: 80%;
+    height: 100px;
+    background: rgba(186, 176, 176, 0.13);
+    text-align: center;
+    margin: 80px auto 0;
+    font-size: 20px;
+    padding-top: 10px;
+    font-family: fantasy;
+}
+
+.testimonials-bg .testimonials-content img{
+    border-radius: 50%;
+    margin-top: 30px;
+    margin-left: 400px;
+}
+
+.testimonials-bg .testimonials-content span{
+    display: block;
+    margin-left: 380px;
+    font-size: 20px;
+}
+
+/*============================
+      testimonials css end
+==============================*/
+
+.contact-bg{
+    width: 100%;
+    height: 900px;
+}
+
+.contact-bg .contact-content{
+    width: 960px;
+    height: 900px;
+    margin: 0 auto;
+}
+
+.contact-bg .contact-content h2{
+    font-size: 60px;
+    color: #01fe87;
+}
+
+.contact-bg .contact-content hr{
+    color: #383d52;
+    width: 120px;
+    height: 5px;
+    background: #383d52;
+}
+
+.contact-bg .contact-content p{
+    font-family: Adobe Devanagari;
+    font-size: 20px;
+    padding-top: 30px;
+    color: #312525;
+}
+
+.contact-bg .contact-content .contact-con{
+   width: 100%;
+   height: 550px;
+   margin-top: 50px;
+}
+
+.contact-bg .contact-content .contact-con .map{
+   width: 460px;
+   height: 550px;
+   float: left;
+}
+
+.contact-bg .contact-content .contact-con .map ul li{
+    font-size: 28px;
+    padding-bottom: 10px;
+    margin-left: 20px;
+}
+
+.contact-bg .contact-content .contact-con .form-con{
+   width: 48%;
+   height: 550px;
+   float: right;
+}
+
+.contact-bg .contact-content .contact-con .form-con form .name{
+    font-size: 30px;
+}
+.contact-bg .contact-content .contact-con .form-con form .email{
+    font-size: 30px;
+}
+
+.contact-bg .contact-content .contact-con .form-con form input[type=text]{
+   width: 80%;
+   height: 40px;
+   display: block;
+   float: left;
+   margin-right: 20px;
+   font-size: 20px;
+   padding: 5px 10px;
+}
+.contact-bg .contact-content .contact-con .form-con form input[type=email]{
+  width: 80%;
+  height: 40px;
+  display: block;
+  font-size: 20px;
+  padding: 5px 10px;
+}
+
+.contact-bg .contact-content .contact-con .form-con form input[type=submit]{
+    padding: 10px 20px;
+    font-size: 20px;
+    margin-top: 20px;
+    margin-left: 120px;
+    background: #01fe87;
+}
+
+.contact-bg .contact-content .contact-con .form-con form input[type=submit]:hover{
+    background: #4b896c;
+}
+
+.contact-bg .contact-content .contact-con .form-con form #message{
+    width: 80%;
+    height: 200px;
+    padding: 5px 10px;
+    font-size: 20px;
+}
+
+/*============================
+      contact css end
+==============================*/
+
+.footer-bg{
+    width: 100%;
+    height: 100px;
+    background: #5D5F60;
+}
+.footer-bg .footer-content{
+    width: 960px;
+    height: 100px;
+    margin: 0 auto;
+    line-height: 100px;
+}
+.footer-bg .footer-content p{
+    float: right;
+    font-size: 20px;
+    color: white;
+}
+.footer-bg .footer-content p span,.eyasir{
+    color: #01fe87;
+}
+/*============================
+      footer css end
+==============================*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
