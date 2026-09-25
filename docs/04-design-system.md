@@ -265,3 +265,8 @@ The main site's `/docs`, `/blog` listings and `/me` use Marble & Ink.
 | Wireframes: Home, Project, CP, Docs map, `/login`, `/me`, Admin list + HTML editor; the "Marble & Ink essay" post template | Low-fi (Excalidraw/Figma), attached to the Phase 1 PR |
 | 3D art-direction still for each scene | Rendered PNG from the prototype spike `SP-05` |
 | Component inventory with states (default, hover, focus, active, disabled, loading, empty, error) | Storybook-lite page in `/admin/design` |
+
+**Revision 0.4:** the low-fi wireframes for **all 58 screens**, the component state catalogue, the
+motion specification and the accessibility annotations now exist as documents in
+[`ux/`](ux/README.md) (UX-02…UX-08). Phase 1 turns them into mid/hi-fi for the screens listed in
+[UX-00 §7](ux/ux-00-strategy-and-methods.md).

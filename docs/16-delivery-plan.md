@@ -176,7 +176,7 @@ localisation.
 ## 5. Definition of Ready
 
 - [ ] References FR/NFR IDs; has acceptance criteria
-- [ ] UI design known (wireframe or component)
+- [ ] UI design known: its `WF-nn` wireframe in [`ux/`](ux/README.md) or a component in [UX-07](ux/ux-07-components-and-states.md)
 - [ ] Data model changes identified
 - [ ] Dependencies resolved (spikes, stories, owner content, judge fixtures recorded)
 - [ ] Estimate ≤ 4 days (otherwise split)

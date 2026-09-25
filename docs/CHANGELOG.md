@@ -1,5 +1,24 @@
 # Planning Changelog
 
+## Revision 0.4 — 2026-09-25
+
+Requested by the owner: **complete UI/UX design documentation for every page, with proper
+wireframes, the UX skills applied, and a full visual and UX audit, still without code.**
+
+| Area | Before (0.3) | Now (0.4) | Where |
+|---|---|---|---|
+| UX strategy | Personas and principles spread across 00/01/04 | UX vision, jobs-to-be-done, principles U1–U8, the UX methods applied, content priority ladders, research and usability-testing plan, fidelity plan | ux/UX-00 |
+| Flows | Journeys in 01 | Journey maps (recruiter, learner, owner) and 11 flow diagrams F-01…F-11 with error paths | ux/UX-01 |
+| Layout & shell | Grid tokens in 04 | Breakpoints D/T/M/W, reflow rules, header (D/T/M), mobile sheet, search dialog, account menu, footer, utility controls, page anatomy | ux/UX-02 |
+| Wireframes | A few sketches in 03/09 and a wireframe to-do list in 04 §10 | **58 screens** drawn at low fidelity with annotations, states and FR links: public (WF-10…21), blog/docs/reading room (WF-30…41), reader accounts (WF-50…55), admin (WF-60…81) | ux/UX-03…06 |
+| Admin screens | Sketches in 09 | Redrawn in full; **UX-06 supersedes 09's sketches** | ux/UX-06, 09 |
+| Components & states | Component list in 04 §6 | State model, full state lists per component, forms, feedback timings, empty/loading/error patterns, typed confirmation, microcopy and word list, status badges | ux/UX-07 |
+| Interaction, motion, a11y | Motion tokens in 04 §7, NFR-A11Y in 02 | Keyboard map, motion specs M1–M15 with reduced-motion fallbacks, WCAG 2.2 AA mapping (incl. 2.4.11, 2.5.7, 2.5.8, 3.3.7, 3.3.8), screen-reader annotations per page, focus rules, AT test matrix | ux/UX-08 |
+| UX audit | — | Nielsen heuristic matrix, 18 findings (UXF-01…18), cognitive walkthroughs of the 6 critical tasks, dark-pattern checklist, a11y audit record, UX sign-off sheet | ux/UX-09 |
+| Fixes found by the review | — | Desktop header wireframe cut off *Contact* (redrawn); delete-account copy now matches doc 19 (immediate, hard delete within 30 days); stale "CP summary" on `/me` removed from the 21 checklist | UX-02, UX-07, 21 |
+| Owner questions | Q-01…Q-36 | **Q-37…Q-42 (UX)** added: CV link on desktop, chip position, admin "CV data" merge, CP nav label, CP activity on phones, hi-fi scope | 21 §3, UX-09 §5 |
+| Estimates | ≈ 135 dev-days | Unchanged: this is design documentation. The P1 mid/hi-fi mock-ups (UX-00 §7) are design time outside the dev-day estimate, scoped by Q-42. The Definition of Ready now points at the `WF-nn` wireframes | 16 |
+
 ## Revision 0.3 — 2026-09-25
 
 Requested by the owner: **no CP progress tracking for learners.**

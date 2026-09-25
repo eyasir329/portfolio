@@ -1,6 +1,6 @@
 # 21 — Audit Checklist, Open Questions & Sign-off
 
-> Status: **Awaiting owner audit (revision 0.3)** · This is the gate between planning (P0) and
+> Status: **Awaiting owner audit (revision 0.4)** · This is the gate between planning (P0) and
 > building (P1). Nothing is implemented until this page is signed. What changed across revisions:
 > [CHANGELOG](CHANGELOG.md).
 
@@ -40,12 +40,14 @@
 | 18 | Content inventory | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | 19 | Guest accounts, reader panel & progress | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | 20 | CP tracking (owner, 10 judges) | ☐ ✅ ☐ ✎ ☐ ❌ | |
+| UX | UI/UX design documentation ([ux/](ux/README.md), UX-00…UX-09; detailed per-document sheet in [UX-09 §7](ux/ux-09-ux-audit.md)) | ☐ ✅ ☐ ✎ ☐ ❌ | |
 
 **Final approval:** ☐ Approved to start Phase 1 · Name: ____________ · Date: ____________
 
 ## 3. Decisions only the owner can make
 
-Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3.
+Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3; Q-37…Q-42 **(UX)** come from
+the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)).
 
 | ID | Question | Options | Recommended default | Answer |
 |---|---|---|---|---|
@@ -85,6 +87,12 @@ Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3.
 | Q-34 **(new)** | Inactive-account policy | delete after 24 months (+ 30-day notice) / keep | 24 months + notice | |
 | Q-35 **(withdrawn in 0.3)** | ~~Require CP handle verification?~~ Not applicable: learners have no CP tracking | — | — | n/a |
 | Q-36 **(new)** | Edit topics in the admin HTML editor at v1? | yes / later | Yes (same editor as the blog; quick fixes without re-uploading) | |
+| Q-37 **(UX)** | CV access on desktop deep pages (UXF-01) | "CV" text link in the desktop header / CV link in project fact sheets / footer only | Header text link next to *Contact* | |
+| Q-38 **(UX)** | Runtime chip position when a bundle has its own bottom-right control (UXF-04) | auto-move to bottom-left / bundle meta tag / both | Both | |
+| Q-39 **(UX)** | Merge Education, Skills and Certifications into one "CV data" admin screen (UXF-05) | merge with tabs / keep separate | Merge with tabs | |
+| Q-40 **(UX)** | Nav label for the CP page (UXF-16) | "CP" / "CP Journey" / "Competitive Programming" | "CP" on desktop, "CP Journey" in the mobile sheet; confirmed by the card sort | |
+| Q-41 **(UX)** | Collapse "Activity" on the CP page on phones (UXF-17) | collapsed / expanded | Collapsed | |
+| Q-42 **(UX)** | Which screens get hi-fi mock-ups in P1 | the 6 in UX-00 §7 / all public screens | The 6 in UX-00 §7 | |
 
 ## 4. Area checklists
 
@@ -100,7 +108,7 @@ Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3.
 ### 03 IA & 04 Design & 05 3D
 - [ ] `read.` hosts docs and posts; `/blog/{slug}` redirects there
 - [ ] "Sign in" is a quiet header link, not a hero CTA
-- [ ] `/me` layout (Continue card, roadmap cards, activity, CP summary) is what I want
+- [ ] `/me` layout (Continue card, roadmap cards, activity) is what I want (drawn in UX-05 WF-51)
 - [ ] No 3D in the reader panel
 
 ### 06 Architecture, 07 DB, 13 API
@@ -132,6 +140,14 @@ Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3.
 - [ ] The capability matrix matches my NEUPC experience; the "needs extension" judges are acceptable
 - [ ] The public CP page uses my accounts on all 10 judges
 - [ ] Learners have **no** CP tracking; they tick roadmap practice problems themselves
+
+### UX — UI/UX design (revision 0.4)
+- [ ] The UX principles U1–U8 and content ladders (UX-00 §3, §5) match my priorities
+- [ ] Flows F-01…F-11 cover what visitors, learners and I actually do (UX-01)
+- [ ] Home, Project, CP, Topic + chip, `/me` and the HTML editor wireframes are right (WF-10, 13, 15, 38, 51, 64)
+- [ ] UX-06 replaces the admin sketches in 09
+- [ ] Components/states, microcopy (UX-07) and the keyboard/motion/a11y specs (UX-08) are acceptable
+- [ ] UX audit findings accepted; Q-37…Q-42 answered (UX-09)
 
 ### 14–18
 - [ ] Cost triggers (DB growth from guest reading progress; reader-API invocations) are acceptable

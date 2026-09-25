@@ -1,13 +1,13 @@
 # Planning Documentation — Index
 
-> **Document set version:** 0.3 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
+> **Document set version:** 0.4 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
 > **Owner / Product Owner:** Eyasir Ahamed · **Prepared as:** business analysis & system design, pre-implementation
 
 This folder is the single source of truth for **what** will be built, **why**, and **how** it will be
 built, operated and verified. Nothing has been implemented yet. Every document can be checked by
 hand before code exists.
 
-**Where the plan stands (revision 0.3):**
+**Where the plan stands (revision 0.4):**
 - Blog posts are **full HTML**, rendered exactly as written on the content origin, and authored in
   an admin HTML editor or uploaded.
 - Readers can create **guest accounts** (Google/GitHub). **Roadmap progress is saved only for
@@ -15,6 +15,9 @@ hand before code exists.
   (removed in 0.3).
 - The **owner's** competitive-programming record is synced from **10 judges** (Codeforces, AtCoder,
   LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph, VJudge) for the public CP Journey page.
+- **UI/UX design** is documented in [`ux/`](ux/README.md): wireframes for all 58 screens, flows,
+  components and states, interaction/motion/accessibility, and a UX audit with its own sign-off
+  (added in 0.4).
 
 ---
 
@@ -44,8 +47,12 @@ hand before code exists.
 | 20 | [19 — Guest accounts, reader panel & progress](19-guest-accounts-and-progress.md) | **New:** sign-in, `/me`, sign-in-gated progress, reader runtime, privacy |
 | 21 | [20 — CP tracking (owner, 10 judges)](20-cp-multi-platform-tracking.md) | **New:** judge capability matrix, adapters, daily per-platform runs, the owner's extension |
 | 22 | [21 — Audit checklist](21-audit-checklist.md) | **Sign-off sheet and the decisions only you can make** |
+| 23 | [ux/ — UI/UX design documentation](ux/README.md) | **New in 0.4:** strategy, flows, wireframes of every page (UX-00…06), components & states (UX-07), interaction, motion & accessibility (UX-08), UX audit & sign-off (UX-09) |
 
 **30-minute path:** CHANGELOG → 00 → 01 §3.7–3.11 → 19 §1–3 → 20 §2 → 21 §3.
+
+**Visual path (UX):** [ux/README](ux/README.md) → UX-03 WF-10 Home → UX-04 WF-38 Topic → UX-05 WF-51 `/me` →
+UX-06 WF-64 HTML editor → UX-09 §1–5.
 
 ---
 
@@ -65,6 +72,12 @@ hand before code exists.
 | `EP-nn` | Epic | 16 | `EP-12` Multi-judge tracking |
 | `Q-nn` | Owner question | 21 | `Q-26` Guest sign-in providers |
 | `T-<AREA>-nn` | Test | 15 | `T-RT-01` Anonymous gating |
+| `WF-nn` | Wireframe (one screen) | ux/UX-02…06 | `WF-38` Topic page with the runtime chip |
+| `F-nn` | User flow | ux/UX-01 | `F-03` Learner: read → sign in → track |
+| `Un` | UX principle | ux/UX-00 | `U5` Quiet sign-in |
+| `Mn` | Motion spec | ux/UX-08 | `M12` Hero 3D idle |
+| `UXF-nn` | UX audit finding | ux/UX-09 | `UXF-04` Chip overlap |
+| `UXQ-nn` | Open UX question (mirrored as `Q-37…42`) | ux/UX-09 | `UXQ-01` CV link on desktop |
 
 **MoSCoW:** M Must · S Should · C Could · W Won't (v1). **Status:** Draft → In review → Approved →
 Superseded.

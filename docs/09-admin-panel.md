@@ -6,6 +6,10 @@
 > **Users** and **Readers** screens (§4.15–4.16). **Sync** becomes a judge-platform health centre
 > (§4.13). **Revision 0.3:** no learner CP data anywhere in admin; judge sync is for the owner's
 > accounts only.
+>
+> **Revision 0.4:** every admin screen is redrawn as a full wireframe in
+> [UX-06](ux/ux-06-wireframes-admin.md) (WF-60…WF-81), with states, keyboard and accessibility specs;
+> where a sketch here and UX-06 differ, **UX-06 wins**.
 
 ---
 
