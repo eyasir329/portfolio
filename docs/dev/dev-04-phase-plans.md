@@ -10,6 +10,17 @@ estimates and dependencies come from [16](../16-delivery-plan.md); screens are t
 
 ---
 
+## 0. Implementation status (revision 0.6)
+
+| Phase | Status |
+|---|---|
+| P1 Foundations | **Partly done:** scaffold, tooling, CI, design system, public shell, Supabase CLI + first migration, `CLAUDE.md`, agent permissions. **Open:** auth and roles (US-001, US-105…107), Vercel + production Supabase, release workflow, spikes |
+| P2 Portfolio core | **Public side done** with content in typed files: Home, Work + case studies, Experience, About, CP (Codeforces live), Contact (Supabase `messages`), CV. **Open:** admin editing and moving content into the database |
+| P7 3D & motion | **Started early:** S1 Plaster Graph and S2 Colonnade with fallbacks |
+| P3–P6, P8 | Not started |
+
+Details in the [CHANGELOG](../CHANGELOG.md) (revision 0.6).
+
 ## 1. The lifecycle every phase follows
 
 ```mermaid

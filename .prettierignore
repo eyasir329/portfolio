@@ -1,0 +1,8 @@
+docs/
+.claude/
+pnpm-lock.yaml
+tests/fixtures/
+*.md
+.mcp.json
+skills-lock.json
+supabase/config.toml

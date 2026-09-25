@@ -1,5 +1,48 @@
 # Planning Changelog
 
+## Revision 0.6 — 2026-09-25 · Implementation starts
+
+Requested by the owner: **start development as a senior full-stack developer, add the necessary tools
+and skills, and build a website that represents the owner as a junior software engineer, in a unique
+and beautiful way.**
+
+### Built
+
+| Area | What exists now | Plan reference |
+|---|---|---|
+| Scaffold & tooling | Next.js 16.3 (App Router, Turbopack), React 19, TypeScript strict, Tailwind v4, ESLint, Prettier, Vitest, Playwright + axe, Supabase CLI (dev dependency), `CLAUDE.md`, `.claude/settings.json` (MCP least-privilege rules from DEV-01 §6.2), `.env.example`, CI workflow | US-100, US-101, DEV-01, DEV-02 |
+| Design system | Marble & Ink tokens (light "Paper" / dark "Night library", no-flash theme script), Newsreader + Geist + Geist Mono, kickers with Roman numerals, wall labels, catalogue plates, hairlines, reduced-motion rules, print styles | 04, US-110…112 |
+| Shell | Sticky header with current-page state, focus-trapped mobile menu, theme toggle (system/light/dark), skip link, colophon footer | WF-00…05, US-111 |
+| Pages | Home (hero, proof strip, selected work, contest record, chronology, workshop, coda), Work index + five case studies, Experience (roles, education, certifications), CP Journey, About (with skills), Writing ("in the workshop", honest about nothing being published yet), Contact, printable CV at `/resume`, 404, error page | WF-10…21, US-120…124, US-020, US-050 |
+| 3D | S1 "Plaster Graph" hero (deterministic graph; the highlighted path is a real Dijkstra shortest path), SVG poster first, WebGL fade-in, pause control, off under reduced motion; S2 "Colonnade" from Codeforces rating history with a table twin | 05, US-160…162 |
+| Live data | Codeforces `user.info` + `user.rating`, cached daily; falls back to the last recorded max rating with an "as of" note when the API is unreachable | FR-CP, U4 |
+| Contact | Server Action with Zod validation, inline errors + error summary, honeypot, salted IP-hash rate limit (3/hour), stored in Supabase `messages`; without Supabase keys it hands off to the visitor's email app | FR-CONTACT, UX-07 §3 |
+| Database | Migration `messages` (RLS on, public roles revoked, check constraints, indexes); 7 pgTAP tests; `supabase db lint` clean | 07, DEV-03 |
+| SEO | Metadata per page, Person JSON-LD, generated Open Graph image, sitemap, robots (non-production is `noindex`), SVG icon | FR-SEO, US-171 |
+| Quality | 16 unit tests; 30 E2E tests (9 pages × desktop and mobile: one `h1`, no console errors, no serious/critical axe violations; plus flows for CV, CP table, contact, theme, 404) | 15, DEV-07 §1 |
+
+### Deliberate deviations from the plan (to review)
+
+| Plan said | Now | Why |
+|---|---|---|
+| Content in Supabase tables edited in admin | Typed files in `content/`, validated by Zod in CI | Admin and auth (US-001, US-105…) are not built yet; moving content to the database is part of P2 |
+| Positioning "Full-Stack Developer · Software Engineer" | **"Junior Software Engineer"** (full-stack, competitive programmer) | Owner request |
+| Node 24 LTS | Node 22+ (`.nvmrc` = 22) | Matches the current tooling; bump when convenient |
+| Release workflow (ADR-022) | Only `ci.yml` so far | Needs the Vercel project and Supabase projects/secrets, which the owner creates |
+| Project years, ICPC month, screenshots | Omitted; typographic "catalogue plates" instead of screenshots | Not in the CV; nothing is invented (U4) |
+
+### Verified in this session
+
+`pnpm check` (lint, types, unit), `pnpm build` (19 routes), `pnpm e2e` (30/30), `supabase db reset` +
+`supabase test db` (7/7) + `supabase db lint` against a local Postgres 17 container.
+
+### Still needs the owner
+
+Authenticate the Supabase MCP server (it failed to connect from the cloud session); create the Vercel
+project and the production Supabase project (`Q-43`); set `NEXT_PUBLIC_SUPABASE_URL`,
+`SUPABASE_SECRET_KEY` and `CONTACT_IP_SALT`; supply the content listed in [18 §9](18-content-inventory.md)
+(screenshots, final CGPA, contest details, other judge handles).
+
 ## Revision 0.5 — 2026-09-25
 
 Requested by the owner: **connect the Supabase MCP server (project `kahrpgvddpukjbwdxhlq`) and the

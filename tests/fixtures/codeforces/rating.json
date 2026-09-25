@@ -1,0 +1,167 @@
+{
+ "status": "OK",
+ "result": [
+  {
+   "contestId": 1800,
+   "contestName": "Fixture Round 1",
+   "handle": "eyasir329",
+   "rank": 5471,
+   "ratingUpdateTimeSeconds": 1672531200,
+   "oldRating": 0,
+   "newRating": 822
+  },
+  {
+   "contestId": 1801,
+   "contestName": "Fixture Round 2",
+   "handle": "eyasir329",
+   "rank": 3791,
+   "ratingUpdateTimeSeconds": 1675123200,
+   "oldRating": 822,
+   "newRating": 863
+  },
+  {
+   "contestId": 1802,
+   "contestName": "Fixture Round 3",
+   "handle": "eyasir329",
+   "rank": 11779,
+   "ratingUpdateTimeSeconds": 1677715200,
+   "oldRating": 863,
+   "newRating": 821
+  },
+  {
+   "contestId": 1803,
+   "contestName": "Fixture Round 4",
+   "handle": "eyasir329",
+   "rank": 8991,
+   "ratingUpdateTimeSeconds": 1680307200,
+   "oldRating": 821,
+   "newRating": 785
+  },
+  {
+   "contestId": 1804,
+   "contestName": "Fixture Round 5",
+   "handle": "eyasir329",
+   "rank": 3950,
+   "ratingUpdateTimeSeconds": 1682899200,
+   "oldRating": 785,
+   "newRating": 874
+  },
+  {
+   "contestId": 1805,
+   "contestName": "Fixture Round 6",
+   "handle": "eyasir329",
+   "rank": 6517,
+   "ratingUpdateTimeSeconds": 1685491200,
+   "oldRating": 874,
+   "newRating": 943
+  },
+  {
+   "contestId": 1806,
+   "contestName": "Fixture Round 7",
+   "handle": "eyasir329",
+   "rank": 4408,
+   "ratingUpdateTimeSeconds": 1688083200,
+   "oldRating": 943,
+   "newRating": 892
+  },
+  {
+   "contestId": 1807,
+   "contestName": "Fixture Round 8",
+   "handle": "eyasir329",
+   "rank": 9851,
+   "ratingUpdateTimeSeconds": 1690675200,
+   "oldRating": 892,
+   "newRating": 943
+  },
+  {
+   "contestId": 1808,
+   "contestName": "Fixture Round 9",
+   "handle": "eyasir329",
+   "rank": 6943,
+   "ratingUpdateTimeSeconds": 1693267200,
+   "oldRating": 943,
+   "newRating": 900
+  },
+  {
+   "contestId": 1809,
+   "contestName": "Fixture Round 10",
+   "handle": "eyasir329",
+   "rank": 9955,
+   "ratingUpdateTimeSeconds": 1695859200,
+   "oldRating": 900,
+   "newRating": 863
+  },
+  {
+   "contestId": 1810,
+   "contestName": "Fixture Round 11",
+   "handle": "eyasir329",
+   "rank": 5028,
+   "ratingUpdateTimeSeconds": 1698451200,
+   "oldRating": 863,
+   "newRating": 818
+  },
+  {
+   "contestId": 1811,
+   "contestName": "Fixture Round 12",
+   "handle": "eyasir329",
+   "rank": 4013,
+   "ratingUpdateTimeSeconds": 1701043200,
+   "oldRating": 818,
+   "newRating": 815
+  },
+  {
+   "contestId": 1812,
+   "contestName": "Fixture Round 13",
+   "handle": "eyasir329",
+   "rank": 9499,
+   "ratingUpdateTimeSeconds": 1703635200,
+   "oldRating": 815,
+   "newRating": 902
+  },
+  {
+   "contestId": 1813,
+   "contestName": "Fixture Round 14",
+   "handle": "eyasir329",
+   "rank": 6622,
+   "ratingUpdateTimeSeconds": 1706227200,
+   "oldRating": 902,
+   "newRating": 854
+  },
+  {
+   "contestId": 1814,
+   "contestName": "Fixture Round 15",
+   "handle": "eyasir329",
+   "rank": 5181,
+   "ratingUpdateTimeSeconds": 1708819200,
+   "oldRating": 854,
+   "newRating": 1101
+  },
+  {
+   "contestId": 1815,
+   "contestName": "Fixture Round 16",
+   "handle": "eyasir329",
+   "rank": 9867,
+   "ratingUpdateTimeSeconds": 1711411200,
+   "oldRating": 1101,
+   "newRating": 1101
+  },
+  {
+   "contestId": 1816,
+   "contestName": "Fixture Round 17",
+   "handle": "eyasir329",
+   "rank": 11858,
+   "ratingUpdateTimeSeconds": 1714003200,
+   "oldRating": 1101,
+   "newRating": 1077
+  },
+  {
+   "contestId": 1817,
+   "contestName": "Fixture Round 18",
+   "handle": "eyasir329",
+   "rank": 8054,
+   "ratingUpdateTimeSeconds": 1716595200,
+   "oldRating": 1077,
+   "newRating": 1047
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+-- Local and staging seed only (DEV-03 §5). Production content is entered through admin.
+-- Portfolio content currently lives in content/*.ts; it moves here in P2.

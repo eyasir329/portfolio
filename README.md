@@ -1,14 +1,44 @@
 # Eyasir Ahamed — Portfolio, Blog, Roadmap Docs & Reader Progress
 
-> **Status: Phase 0 — Planning & audit (revision 0.5).**
-> This repository currently contains **planning documents only**. No application code has been
-> scaffolded, installed or run. Implementation starts after the owner signs off
-> [`docs/21-audit-checklist.md`](docs/21-audit-checklist.md) and the UX sign-off in
-> [`docs/ux/ux-09-ux-audit.md`](docs/ux/ux-09-ux-audit.md). What changed: [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+> **Status: Phase 1–2 in progress (revision 0.6).** The public portfolio is implemented: Home with a
+> WebGL "Plaster Graph", Work and case studies, Experience, CP Journey (live Codeforces data + 3D
+> Colonnade), About, Writing, Contact (Supabase-backed with an email fallback) and a printable CV.
+> The plan it implements lives in [`docs/`](docs/README.md). What changed: [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
-The personal website of **Eyasir Ahamed**: full-stack developer, Computer Science & Engineering
+The personal website of **Eyasir Ahamed**: junior software engineer, Computer Science & Engineering
 graduate (Netrokona University) and competitive programmer (ICPC 2025 Asia Dhaka Regionalist,
 Mymensingh Divisional Champion).
+
+## Run it
+
+```bash
+nvm use            # Node 22+
+pnpm install
+cp .env.example .env.local   # optional: Supabase keys enable the contact inbox
+pnpm dev           # http://localhost:3000
+```
+
+| Command | Does |
+|---|---|
+| `pnpm check` | ESLint + TypeScript + Vitest unit tests |
+| `pnpm e2e` | Builds, starts on :3200 and runs Playwright + axe on desktop and mobile |
+| `pnpm exec supabase db start && pnpm exec supabase db reset && pnpm exec supabase test db` | Local Postgres, migrations and pgTAP RLS tests (Docker) |
+| `pnpm build` / `pnpm start` | Production build and server |
+
+Stack in use: Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind CSS v4 ·
+Three.js via React Three Fiber · Supabase · Zod · Vitest · Playwright + axe · GitHub Actions
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+### Where things are
+
+| Path | Contents |
+|---|---|
+| `app/` | Routes: `/`, `/projects`, `/projects/[slug]`, `/experience`, `/cp`, `/about`, `/writing`, `/contact`, `/resume`, OG image, sitemap, robots |
+| `components/` | Shell (header, footer, theme toggle), wall labels and plates, charts, 3D scenes (`hero/`, `cp/`) |
+| `content/` | Typed, Zod-validated content from the CV (`profile`, `projects`, `record`) |
+| `lib/` | Env validation, Codeforces client with honest fallback, graph geometry, Supabase admin client, contact schema |
+| `supabase/` | CLI config, migrations (RLS on every table), pgTAP tests |
+| `tests/` | Unit tests, Playwright E2E, recorded fixtures |
 
 ## What will be built
 
