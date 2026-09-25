@@ -1,162 +1,176 @@
 # 17 — Risks & Architecture Decision Records
 
-> Status: **Draft v0.1** · Related: every document; this is where the "why" is kept.
+> Status: **Draft v0.2** · Related: every document; this is where the "why" is kept.
+>
+> **Revision 0.2:** risks R-16…R-23 added; ADR-003, 004, 005 revised; ADR-007 narrowed (superseded
+> for the blog by ADR-014); ADR-014…020 added.
 
 ---
 
 ## Part A — Risk register
 
-Likelihood (L) and Impact (I): 1 = low … 3 = high. Score = L × I.
+L = likelihood, I = impact (1–3). Score = L × I.
 
-| ID | Risk | L | I | Score | Mitigation | Trigger / signal | Owner |
-|---|---|:-:|:-:|:-:|---|---|---|
-| R-01 | **Scope is large for a solo developer** (≈ 100 dev-days) | 3 | 2 | 6 | Phased delivery with independent exits; "Early MVP" ordering option (`Q-19`); strict Must/Should/Could | A phase overruns by > 30% | Owner |
-| R-02 | **Supabase free project pauses** after 7 days without requests | 2 | 3 | 6 | Daily sync jobs + 10-min uptime ping to `/api/health` (DB query); runbook; upgrade trigger | Uptime alert; sync failures | Dev |
-| R-03 | **Copyright exposure** from verbatim book excerpts in bundle `data/` folders | 2 | 3 | 6 | `data/**` private by default; owner confirms before any change (`Q-14`) | Takedown request | Owner |
-| R-04 | **3D hurts performance or accessibility** | 2 | 2 | 4 | Capability gate, posters, budgets in CI, reduced-motion, text-first LCP | Lighthouse < budget; fps below target | Dev |
-| R-05 | **Unofficial judge APIs break** (AtCoder, LeetCode) | 3 | 1 | 3 | Only Codeforces + GitHub in v1; adapters isolated; manual overrides; NEUPC option | Weekly contract check fails | Dev |
-| R-06 | **Bundle format drift** from the generator breaks metadata extraction | 2 | 2 | 4 | Selector fallbacks; optional `kb.json`; golden test on the reference; warnings instead of failures | W12/W14 warnings spike | Dev |
-| R-07 | **Malicious or buggy bundle JS** | 1 | 3 | 3 | Isolated content origin, strict CSP, sandboxed preview, one-click rollback | Sentry errors on KB, odd requests | Dev |
-| R-08 | **CDN purge doesn't work for route handlers** → stale topics after publish | 2 | 2 | 4 | `SP-02`; fallback: short `s-maxage` (5 min) | T-KB-20 fails | Dev |
-| R-09 | **Storage quota** exceeded as roadmaps grow | 2 | 2 | 4 | CAS dedupe; `data/` and `assets/src/` exclusion option; retention; upgrade trigger at 70% | Dashboard quota widget | Owner |
-| R-10 | **Admin lockout** (lost Google access, hook misconfiguration) | 1 | 3 | 3 | Break-glass SQL runbook; second owner email optional (`Q-02`); SP-07 test | Cannot sign in | Owner |
-| R-11 | **Content bottleneck** (screenshots, write-ups, outline not ready) | 3 | 2 | 6 | Content timeline in [16 §8](16-delivery-plan.md); sections hide when empty; seed drafts from the CV | Phase exit blocked on content | Owner |
-| R-12 | **Platform/API churn** (Next.js, Supabase key changes: legacy `anon`/`service_role` keys being retired in favour of `sb_publishable_`/`sb_secret_`) | 2 | 2 | 4 | Use new-format keys from day 1; pin versions; Renovate; ADRs | Deprecation notices | Dev |
-| R-13 | **Vercel Hobby limits** (non-commercial terms, function duration, image optimisation quota) | 2 | 2 | 4 | Stepped KB imports; `next/image` only for main-site media; upgrade trigger | Usage > 70% | Owner |
-| R-14 | **Design feels generic** despite the brief | 2 | 2 | 4 | Distinct concept (Marble & Ink); art-direction spike + owner sign-off before build; signature components (wall label, colonnade) | Owner review | Owner + dev |
-| R-15 | **Privacy of teammates/contacts** named on the CP page or in photos | 2 | 1 | 2 | Ask teammates' consent; names optional per contest (`Q-18`) | — | Owner |
+| ID | Risk | L | I | Score | Mitigation | Owner |
+|---|---|:-:|:-:|:-:|---|---|
+| R-01 | **Scope is large for one developer** (≈ 142 dev-days) | 3 | 3 | 9 | Phased releases; option B "readers first" (v1 at ≈ 22 weeks, then CP and 3D as v1.1); strict MoSCoW | Owner |
+| R-02 | Supabase free project pauses | 1 | 3 | 3 | Every-minute worker + uptime pings; runbook | Dev |
+| R-03 | Copyright exposure from `data/` excerpts | 2 | 3 | 6 | Private by default (`Q-14`) | Owner |
+| R-04 | 3D hurts performance/accessibility | 2 | 2 | 4 | Gate, posters, budgets | Dev |
+| R-05 | **Judge endpoints change or block us** (unofficial APIs, scraping, Cloudflare) | 3 | 2 | 6 | API-first; NEUPC-proven endpoints; per-platform kill switches; "needs extension" state; weekly contract checks; SP-08 | Dev |
+| R-06 | Bundle format drift breaks extraction or runtime controls | 2 | 2 | 4 | Fallbacks, `kb.json`, per-roadmap control selectors, W18 warning, golden tests | Dev |
+| R-07 | Malicious/buggy author JS (topics or posts) | 1 | 3 | 3 | Isolated origin; narrow reader session; CSP; sandboxed preview; rollback | Dev |
+| R-08 | CDN purge doesn't work for route handlers | 2 | 2 | 4 | SP-02; 5-min fallback | Dev |
+| R-09 | Storage quota | 2 | 2 | 4 | CAS; retention; trigger at 70% | Owner |
+| R-10 | Admin lockout | 1 | 3 | 3 | Break-glass runbook; backup owner email | Owner |
+| R-11 | Content bottleneck | 3 | 2 | 6 | Content timeline; sections hide when empty | Owner |
+| R-12 | Platform/API churn (Next.js, Supabase keys) | 2 | 2 | 4 | New-format keys; pinning; Renovate | Dev |
+| R-13 | Vercel Hobby limits (invocations/CPU from the worker and reader API) | 2 | 2 | 4 | Worker cadence adjustable (1–5 min); batched runtime writes; upgrade trigger | Owner |
+| R-14 | Design feels generic | 2 | 2 | 4 | Art-direction spike + sign-off | Owner |
+| R-15 | Teammates' privacy on contest entries | 2 | 1 | 2 | Consent; names optional | Owner |
+| R-16 | **Guest personal data**: a leak or misuse would harm readers and trust | 1 | 3 | 3 | Data minimisation; RLS own-rows with pgTAP; aggregate-only admin views; export/delete; privacy review (US-185); incident runbook | Owner + dev |
+| R-17 | **Sign-up abuse / bot accounts** consume quotas | 2 | 1 | 2 | OAuth-only; disposable-domain block; bans; per-user limits | Dev |
+| R-18 | **Runtime reconciliation conflicts with a bundle's own scripts** (e.g. a future generator writes progress differently) | 2 | 2 | 4 | SP-09 prototype; `self`/`off` runtime modes; W18; per-roadmap selectors; T-RT suite on every generator change | Dev |
+| R-19 | **Database growth from guest solves/progress** exceeds the free tier | 2 | 2 | 4 | Store accepted solves only; pause inactive users; retention; upgrade trigger at 350 MB | Owner |
+| R-20 | **Anonymous-gating bypass** (reader blocks the runtime and ticks locally) | 3 | 1 | 3 | Accepted: UX rule, not security; nothing syncs without an account ([19 §3.4](19-guest-accounts-and-progress.md)) | Owner |
+| R-21 | **Extension maintenance burden** (judge DOM changes break content scripts) | 2 | 2 | 4 | Reuse the NEUPC extension (one codebase for both projects); compatibility aliases; extension is optional | Owner |
+| R-22 | **Terms-of-service complaints from a judge** about automated reads | 1 | 2 | 2 | Public pages only, low frequency, identified client, robots.txt, immediate kill switch | Owner |
+| R-23 | **Blog SEO** on a subdomain instead of the main domain | 2 | 1 | 2 | Main-domain redirects, sitemaps, cross-links; revisit after 6 months of Search Console data (`Q-27`) | Owner |
 
 ## Part B — Architecture Decision Records
 
-Format: **Context → Decision → Consequences → Alternatives considered.** Status is `Proposed` until
-the owner approves this document.
+Status `Proposed` until approved.
 
 ### ADR-001 — Next.js 16 App Router with Cache Components
-- **Context:** Mandated Next.js; the content-heavy site needs near-zero client JS and instant
-  updates after admin edits.
-- **Decision:** App Router, React Server Components, Server Actions, `cacheComponents: true` with
-  `"use cache"` + `cacheTag`/`updateTag`/`revalidateTag`; `proxy.ts` for host routing.
-- **Consequences:** Explicit caching (nothing cached by accident); a tag catalogue to maintain; the
-  team must follow Next 16 conventions (`proxy.ts` runs on Node.js).
-- **Alternatives:** Pages Router (legacy); Astro for content + separate admin (two stacks, against
-  the mandate).
+Unchanged: RSC + Server Actions + `"use cache"`/tags; `proxy.ts` host routing.
 
 ### ADR-002 — Supabase with supabase-js, SQL migrations, no ORM
-- **Context:** Supabase is mandated; security relies on RLS.
-- **Decision:** `@supabase/supabase-js` + `@supabase/ssr` with generated TypeScript types; schema in
-  plain SQL migrations (Supabase CLI); pgTAP for policy tests.
-- **Consequences:** RLS stays the single permission truth; SQL skills required; no ORM migrations to
-  reconcile.
-- **Alternatives:** Drizzle/Prisma on top of Supabase (a second schema source, and the ORM's direct
-  connection bypasses RLS unless handled carefully).
+Unchanged: RLS is the permission truth; pgTAP tests.
 
-### ADR-003 — Google-only admin sign-in, gated before account creation
-- **Context:** Only the owner (and maybe one editor) should ever have an account.
-- **Decision:** Supabase Google provider; **Before User Created** hook rejects non-allowlisted
-  emails; **Custom Access Token** hook adds `app_role`; RLS checks the `admin_users` table (not only
-  the claim) for instant revocation; email/password disabled.
-- **Consequences:** No stray user rows; revocation is immediate; hooks are part of migrations.
-- **Alternatives:** Allow sign-ups and filter afterwards (leaves accounts behind); magic links (more
-  moving parts); Auth.js (a second auth system beside Supabase).
+### ADR-003 (revised) — Open guest sign-up; admin by allowlist only
+- **Context:** Readers need accounts to save progress and track CP; admin must stay locked down.
+- **Decision:** Supabase Auth with Google and GitHub for everyone. Every new account is a `guest`.
+  `owner`/`editor` come only from active `admin_users` rows (checked by table in RLS, surfaced as
+  a JWT claim for UI/proxy). The Before User Created hook blocks disposable domains and banned
+  addresses.
+- **Consequences:** One identity system; RLS must be airtight for user-owned tables (pgTAP matrix);
+  privacy obligations (export/delete).
+- **Alternatives:** A separate auth system for readers (duplication); allowlist-only accounts (no
+  guests, which contradicts the requirement).
 
-### ADR-004 — Roadmap bundles served from an isolated content origin via Next.js
-- **Context:** Bundles contain inline JavaScript and must be served with correct MIME types and a
-  folder-faithful URL tree. Supabase Storage serves HTML as `text/plain` on its default domain.
-- **Decision:** A dedicated host (`kb.…`) routed by `proxy.ts` to a route handler that streams
-  files from a private bucket with explicit headers and a strict CSP. No auth cookies exist on that
-  host.
-- **Consequences:** Bundle JS can't reach the admin session; one deployment serves both hosts; needs
-  a subdomain (or a `*.vercel.app` alias) and CDN caching to keep Supabase egress low.
-- **Alternatives:** Same-origin path (`/kb/…`), rejected: bundle JS could read the session. Iframe
-  inside main-site pages, rejected: poor SEO and deep-linking, no extra isolation. Supabase public
-  URLs, rejected: `text/plain` HTML. Separate static host (e.g. Cloudflare Pages), rejected for v1: a
-  second deploy pipeline, no DB-driven generated pages/versioning.
+### ADR-004 (revised) — One isolated content origin for all author HTML
+- **Context:** Topics **and blog posts** are full HTML with scripts; readers need a session there for
+  progress.
+- **Decision:** `read.eyasir329.dev` serves `/docs/**` and `/blog/**` through a Next.js route
+  handler with explicit headers and CSP. It has its own narrow reader session (ADR-015) and never
+  receives main-origin cookies. The main site's `/blog/[slug]` redirects there.
+- **Consequences:** Strong isolation; posts' canonical URLs live on the subdomain (R-23).
+- **Alternatives:** Rendering post HTML on the main origin, rejected (script access to sessions and
+  server actions). Iframe embedding, rejected (SEO, height/scroll issues, no extra isolation).
+  Separate origins for docs and blog, rejected (two bridges, split theme/progress storage).
 
-### ADR-005 — Byte-for-byte serving; generate only what's missing
-- **Context:** The bundles are carefully produced (measured numbers, recorded demos); any rewrite
-  risks breaking them.
-- **Decision:** Never modify bundle files. Canonicals via HTTP headers; missing index/coming-soon
-  pages generated in the roadmap's extracted theme.
-- **Consequences:** No injected analytics or nav in topic pages (by design); cross-page features
-  (progress on index pages) read the bundles' own `localStorage` keys.
-- **Alternatives:** Inject a shared header/footer (breaks fidelity); re-render bundles into our own
-  template (loses interactivity).
+### ADR-005 (revised) — Immutable stored bytes; one injected runtime block
+- **Context:** Faithful rendering matters, but sign-in-gated progress needs code inside the page.
+- **Decision:** Store every file exactly as uploaded. When serving an entry `index.html`, insert one
+  fixed block (context JSON + `<script src="/__rt/runtime.v1.js">`) before `</head>`. It is
+  identical for all visitors, so it stays cacheable. Modes `inject` / `self` / `off`. All other files
+  are byte-for-byte.
+- **Consequences:** A tiny, testable deviation (T-KB-02 checks "served minus block == stored");
+  runtime versioned by filename.
+- **Alternatives:** Rewrite bundles on import (breaks fidelity and hashes); require generator
+  changes before launch (blocks existing bundles); per-user HTML (breaks CDN caching).
 
-### ADR-006 — Content-addressed storage for bundle files
-- **Context:** Topics are re-uploaded often with small changes; versions must be immutable and
-  rollbacks instant.
-- **Decision:** Store each file once under its SHA-256; versions are manifests (path → hash);
-  publish = pointer swap; GC removes unreferenced objects after 30 days.
-- **Consequences:** Cheap versions, instant rollback, ETags for free; needs GC and a manifest cache.
-- **Alternatives:** Copy full folders per version (storage × versions); overwrite in place (no
-  rollback, cache inconsistency).
+### ADR-006 — Content-addressed storage
+Unchanged, now shared by topics, posts, templates and editor assets.
 
-### ADR-007 — Blog in Markdown + directives (not MDX, not rich-text JSON)
-- **Context:** Technical posts with code, math and a few custom components; an admin-only author;
-  safety and portability matter.
-- **Decision:** Markdown stored in the DB, rendered on the server with unified/remark/rehype, Shiki,
-  KaTeX, and `remark-directive` for components; raw HTML disabled; CodeMirror editor with live
-  server-rendered preview.
-- **Consequences:** Portable content (can move to files/Git later); no code execution from content;
-  new components need a directive handler.
-- **Alternatives:** MDX from the DB (executes JS at render; heavier); TipTap/ProseMirror JSON (less
-  portable, harder for code-heavy writing).
+### ADR-007 (narrowed) — Markdown for site-rendered text only
+- **Decision:** Markdown + directives remain for text the **main origin** renders (case studies,
+  bio, contest write-ups, privacy/terms). **Blog posts no longer use Markdown** (ADR-014).
 
-### ADR-008 — React Three Fiber with one shared canvas, as progressive enhancement
-- **Context:** "Proper 3D" is required, and so are fast, accessible pages.
-- **Decision:** three.js via R3F + drei; one persistent canvas with `View`s; lazy-loaded after idle;
-  capability gate (detect-gpu, reduced motion, user toggle); posters; `frameloop="demand"`.
-- **Consequences:** One WebGL context; content never waits for 3D; posters must be regenerated when
-  scenes change.
-- **Alternatives:** A canvas per section (context churn, memory); vanilla three.js (more imperative
-  glue in React); Spline embeds (heavy runtime, less control, third-party).
+### ADR-008 — R3F with one shared canvas, progressive enhancement
+Unchanged.
 
-### ADR-009 — Postgres full-text search, no external search service
-- **Context:** A few hundred documents; privacy; zero budget.
-- **Decision:** `tsvector` + GIN + `websearch_to_tsquery` + `pg_trgm`; one `search_all` RPC under
-  RLS.
-- **Consequences:** No sync to a third party; good-enough ranking; English stemming only.
-- **Alternatives:** Algolia/Meilisearch (another service and secret); client-side index such as
-  Pagefind (doesn't cover DB-driven content well; KB is on another origin).
+### ADR-009 — Postgres full-text search
+Unchanged; now indexes bundle sections of posts and topics.
 
-### ADR-010 — pg_cron + pg_net as the scheduler
-- **Context:** Vercel Hobby cron runs at most once per day; scheduled posts need ~5-minute
-  granularity.
-- **Decision:** pg_cron jobs call authenticated route handlers via pg_net; Vercel Cron kept as a
-  daily backup trigger.
-- **Consequences:** Schedules live in migrations; secrets in Supabase Vault; jobs also keep the free
-  project awake.
-- **Alternatives:** Vercel Pro cron; GitHub Actions schedules (delayed, less reliable timing);
-  external cron services.
+### ADR-010 — pg_cron + pg_net scheduler
+Unchanged; now also triggers the every-minute CP worker.
 
-### ADR-011 — Tailwind CSS v4 tokens + shadcn/ui for admin, bespoke public components
-- **Context:** A distinctive public design, and a productive, accessible admin.
-- **Decision:** CSS custom-property tokens exposed via Tailwind v4 `@theme`; shadcn/ui (Radix) as
-  owned source for the admin; hand-built public components following Marble & Ink.
-- **Consequences:** A consistent token system across both; the public site doesn't look like a
-  template.
-- **Alternatives:** A full component library (MUI/Chakra) with a generic look and heavier runtime;
-  CSS Modules only (slower iteration).
+### ADR-011 — Tailwind v4 tokens + shadcn/ui for admin
+Unchanged.
 
-### ADR-012 — Two Supabase projects (staging, production) instead of branching
-- **Context:** Previews need a safe database; the free tier gives two projects; branching is paid.
-- **Decision:** Staging project for local-linked work and previews; production for `main`.
-  Migrations are applied to staging first.
-- **Consequences:** Manual parity (secrets, hooks, Vault) per project, kept in check by migrations
-  and a checklist.
-- **Alternatives:** Supabase Branching (paid); previews against production (unsafe).
+### ADR-012 — Two Supabase projects (staging, production)
+Unchanged.
 
-### ADR-013 — Server Actions for admin mutations; route handlers only for external callers
-- **Context:** Most writes come from our own forms; some callers are cron, webhooks and the CLI.
-- **Decision:** Server Actions for UI mutations; route handlers for OAuth, cron, webhooks, CLI,
-  feeds, OG, KB serving and health.
-- **Consequences:** Less API surface; typed end-to-end; the CLI needs token-auth routes that reuse
-  the same services.
-- **Alternatives:** A full REST/tRPC API for everything (more surface to secure and version).
+### ADR-013 — Server Actions for UI mutations; route handlers for external callers
+Unchanged; external callers now include the reader runtime, the browser extension and the CLI.
 
-## Part C — Decision log (to be filled during build)
+### ADR-014 — Blog posts are HTML bundles
+- **Context:** The owner writes posts in HTML and wants them rendered in full (interactivity, custom
+  layouts), like the topics.
+- **Decision:** A post is a subject of the bundle engine: versions, CAS, validation, preview,
+  scheduling, search. Authored in an in-admin HTML editor (templates, assets, live sandboxed
+  preview) or uploaded as a zip/CLI. The main site shows listings and feeds from extracted and
+  overridden metadata.
+- **Consequences:** One engine for two content types; the editor also serves topics; feeds carry
+  summaries rather than full HTML.
+- **Alternatives:** Sanitised HTML fragments rendered on the main origin (loses scripts/styles, so it
+  doesn't meet the requirement); MDX (executes code on the main origin; not HTML-first).
+
+### ADR-015 — Reader session bridge for the content origin
+- **Context:** The content origin must know who the reader is without sharing main-origin cookies.
+- **Decision:** After main-origin sign-in, `/auth/bridge` mints a 60 s single-use code; the content
+  origin exchanges it for an opaque, HttpOnly `__Host-rt_session` (DB-backed, revocable, 30 days
+  sliding) plus a non-secret `rt_signed_in` hint. The session can only call `/__api/*`.
+- **Consequences:** Works on any domain setup (no cookie sharing); instant revocation; one extra
+  redirect on first sign-in. Accepted: bundle JS on the content origin can act on the current
+  reader's progress.
+- **Alternatives:** Shared parent-domain cookies (exposes the main session to author JS); CORS calls
+  from the content origin to the main origin with credentials (CSRF surface, ITP issues).
+
+### ADR-016 — Server-authoritative progress; the runtime reconciles through the page's own events
+- **Context:** Bundles keep progress in `localStorage`; the owner wants progress only for signed-in
+  users, synced across devices.
+- **Decision:** The server is the source of truth. The runtime guards the progress keys (blocked when
+  anonymous; cached and queued when signed in), applies server state by setting control `checked`
+  and dispatching `change` (so the page's own UI logic updates), and flushes a pending queue.
+- **Consequences:** Works with unmodified bundles; relies on the documented control contract
+  (selectors, key prefix); covered by T-RT tests.
+- **Alternatives:** Rewrite bundle scripts (breaks fidelity); server-rendered personalised HTML
+  (uncacheable).
+
+### ADR-017 — Judge adapters: API first, scraping behind flags, extension for the rest
+- **Context:** The 10 judges range from official APIs to no public data at all. The owner's NEUPC
+  already solved this in practice.
+- **Decision:** Port NEUPC's adapters to TypeScript. Order of preference: official/community API →
+  public profile page (flagged, polite) → browser extension ingestion (NEUPC-compatible) → CLIST
+  fallback (optional). Surface "needs extension" honestly.
+- **Consequences:** Reuses proven code; some judges are best-effort; the extension is optional but
+  unlocks full history.
+- **Alternatives:** Only API judges (fails the requirement for 10 judges); asking users for judge
+  credentials (unacceptable).
+
+### ADR-018 — Canonical problem keys
+- **Decision:** Every solve and every roadmap practice link is normalised to `{judge}:{id}`, so
+  VJudge and origin-judge solves deduplicate and practice items can be auto-verified.
+- **Consequences:** One shared parser with table-driven tests; unknown URLs aren't verified.
+
+### ADR-019 — Database-backed job queue
+- **Decision:** `cp_sync_jobs` + `FOR UPDATE SKIP LOCKED` + pg_cron worker every minute; per-platform
+  budgets stored in `cp_platforms`.
+- **Consequences:** No external queue service; throughput ≈ 600 account syncs/hour (Codeforces-bound).
+- **Alternatives:** Upstash/QStash, Inngest or Trigger.dev (another service and bill); Vercel Cron
+  (daily only on Hobby).
+
+### ADR-020 — Generalised bundle engine (`bundle_*` tables with subjects)
+- **Decision:** Replace `kb_*` storage tables with `bundle_*` tables keyed by `(subject_type,
+  subject_id)`; roadmap nodes and posts are subjects; templates reuse versions.
+- **Consequences:** One pipeline, one serving path, one set of tests; a polymorphic FK is enforced by
+  trigger.
+
+## Part C — Decision log
 
 | Date | ID | Decision | By |
 |---|---|---|---|
-| 2026-09-24 | ADR-001…013 | Proposed in the planning set | Planning |
-| | | | |
+| 2026-09-24 | ADR-001…013 | Proposed (revision 0.1) | Planning |
+| 2026-09-25 | ADR-003, 004, 005 revised; 007 narrowed; ADR-014…020 added | Proposed (revision 0.2): HTML blog, guest accounts, 10-judge tracking | Planning |

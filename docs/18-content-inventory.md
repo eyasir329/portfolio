@@ -1,6 +1,6 @@
 # 18 — Content Inventory & Seed-Data Mapping
 
-> Status: **Draft v0.1** · Source: `Eyasir_Ahamed_CV.tex` ("Last updated in August 2026") and the
+> Status: **Draft v0.2** (rev 0.2: owner handles on all 10 judges; HTML launch posts; new table names) · Source: `Eyasir_Ahamed_CV.tex` ("Last updated in August 2026") and the
 > owner's brief · Related: [07 DB](07-database-design.md), [11 Content modules](11-content-modules.md)
 
 Everything the CV already gives us, where it goes in the database, and what's still missing. Seed rows
@@ -20,7 +20,7 @@ unreviewed.
 | Phone | (in the CV; deliberately not repeated in this repo) | `profile.phone` entered via admin, `show_phone=false` | ❌ by default (privacy) |
 | LinkedIn | linkedin.com/in/eyasir329 | `social_links(linkedin)` | ✅ |
 | GitHub | github.com/eyasir329 | `social_links(github)`, GitHub sync login | ✅ |
-| Codeforces | codeforces.com/profile/eyasir329 | `social_links(codeforces)`, `cp_profiles(codeforces, 'eyasir329', primary, sync on)` | ✅ |
+| Codeforces | codeforces.com/profile/eyasir329 | `social_links(codeforces)`, `cp_accounts(owner, codeforces, 'eyasir329', public, primary, sync on)` | ✅ |
 | Availability | "Exploring roles in Software Engineering, DevOps & Cloud, QA, and AI/ML Engineering" | `profile.availability.roles` | ✅ |
 
 ### 1.1 Summary / positioning (needs an update)
@@ -73,16 +73,16 @@ page ("NEUPC tracks members' progress").
 | Higher Secondary Certificate (HSC) | Govt. Ashek Mahmud College | 2019 – 2020 | GPA 5.00 / 5.00 | |
 | Secondary School Certificate (SSC) | Jamalpur Zilla School | 2017 – 2018 | GPA 5.00 / 5.00 | |
 
-## 5. Competitive programming → `cp_profiles`, `cp_contests`, `cp_milestones`
+## 5. Competitive programming → `cp_accounts`, `cp_contests`, `cp_milestones`
 
 | Item | Value | Target |
 |---|---|---|
-| Codeforces | handle `eyasir329`, max rating 1101 (sync will refresh) | `cp_profiles` (primary, sync on) |
-| Total solved | "1000+ problems solved across judges" | `cp_profiles.override.solved_label = "1000+"` on the primary profile, or a site-level stat (`v_public_stats`) |
+| Codeforces | handle `eyasir329`, max rating 1101 (sync will refresh) | `cp_accounts` (owner, public, primary, sync on) |
+| Total solved | "1000+ problems solved across judges" | Computed from the owner's public accounts on all judges (`v_public_stats`); keep `override.solved_label = "1000+"` until the synced total is complete |
 | ICPC | **ICPC 2025 Asia Dhaka Regional** (host BUBT): **112th overall**, **Mymensingh Divisional Champion**, of **300+** teams | `cp_contests` (featured, series ICPC) |
 | IUPCs (ranked) | MU, NSUCEC and BUET inter-university contests: ranked 40th–75th (2025–2026) | 3 × `cp_contests`; **per-contest rank, date and team needed** (`Q-10`) |
 | IUPCs (participation) | 7+ other national onsite contests including UU, DUET, UIU, KUET, IUT IUPCs | `cp_contests` rows (rank optional) |
-| Other judges | Not listed in the CV | `Q-09` (AtCoder, LeetCode, CodeChef, CSES, VJudge handles) |
+| Other judges | Not listed in the CV | **Owner handles needed for AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES (numeric id), Toph, VJudge** → `cp_accounts` (public). Judges without public solved lists need the extension ([20 §2](20-cp-multi-platform-tracking.md)) |
 
 ## 6. Experience & leadership → `experiences`
 
@@ -102,7 +102,7 @@ works with leadership entries alone; the Home "Chronology" also includes educati
 
 Credential URLs/images needed (`Q-12`).
 
-## 8. Roadmap Docs → `kb_roadmaps`, `kb_nodes`
+## 8. Roadmap Docs → `kb_roadmaps`, `kb_nodes` (served at `read.eyasir329.dev/docs/cp/…`)
 
 | Item | Known | Needed |
 |---|---|---|
@@ -123,18 +123,20 @@ Credential URLs/images needed (`Q-12`).
 | 6 | Final CGPA and graduation date | Education | M |
 | 7 | Any internships/freelance/teaching entries | Experience | S |
 | 8 | ICPC/IUPC details: exact ranks, dates, team names, teammates (with consent), photos, standings links | CP | M |
-| 9 | Other judge handles | CP | S |
+| 9 | Owner handles on the other 9 judges (and extension set-up for LeetCode, CSES, LightOJ, SPOJ, CodeChef history) | CP | M |
 | 10 | Certificate links/images | Certifications | S |
 | 11 | Current CV PDF (compiled from the `.tex`) | Resume | M |
 | 12 | Roadmap outline + bundles + licence + decision on `data/` sources | Docs | M |
-| 13 | 1–3 launch blog post drafts (ideas: "Building NEUPC's multi-judge tracker", "What ICPC Dhaka taught me", "Measuring std::vector") | Blog | C |
+| 13 | 1–3 launch posts **in HTML** (in the admin editor from the essay template, or as bundles from your generator). Ideas: "Building NEUPC's multi-judge tracker", "What ICPC Dhaka taught me", "Measuring std::vector" | Blog | S |
+| 15 | GitHub OAuth app (for guest sign-in) and approval of the privacy/terms wording for accounts | Accounts | M |
 | 14 | "Now" paragraph (what you're focused on) | About | C |
 
 ## 10. Seed file plan
 
-`supabase/seed.sql` (Phase 2) will contain: owner allowlist row; `cp_platforms`; skill categories
-and skills (§2); five projects (§3, drafts, with CV highlights as `highlights[]`); education (§4);
-CP profile + ICPC contest (§5); the leadership experience (§6); certifications (§7); an empty `cp`
-roadmap with the nodes known from the reference links (§8, status `planned`); `site_settings`
-defaults. Personal data such as the phone number goes into the **production** database only
+`supabase/seed.sql` (Phase 2) will contain: owner allowlist row; the 10 `cp_platforms`; skill
+categories and skills (§2); five projects (§3, drafts, with CV highlights as `highlights[]`);
+education (§4); the ICPC contest (§5); the leadership experience (§6); certifications (§7); an empty
+`cp` roadmap with the nodes known from the reference links (§8, status `planned`); the default
+"Marble & Ink essay" and "KB topic" templates; `site_settings` defaults. The owner's judge
+accounts are created after the owner's first sign-in (they need the owner's `user_id`). Personal data such as the phone number goes into the **production** database only
 through admin, never into the seed file committed to git.

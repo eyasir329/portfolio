@@ -1,163 +1,167 @@
 # 08 — Authentication, Authorisation & Security
 
-> Status: **Draft v0.1** · Related: [07 DB §6–8](07-database-design.md), [06 §5](06-system-architecture.md), [10 §8](10-roadmap-docs-system.md), [02 NFR-SEC](02-non-functional-requirements.md)
+> Status: **Draft v0.2** · Related: [07 DB §6–8](07-database-design.md), [06 §5](06-system-architecture.md), [10 §8](10-roadmap-docs-system.md), [19 Guest accounts](19-guest-accounts-and-progress.md), [20 §9 Extension](20-cp-multi-platform-tracking.md), [02 NFR-SEC](02-non-functional-requirements.md)
+>
+> **Revision 0.2:** sign-up is **open to guests** (Google, GitHub); admin rights still come only from
+> the allowlist. The content origin gets its own **reader session** via a one-time-code bridge. Blog
+> posts join topics as untrusted-HTML-on-an-isolated-origin. New: extension tokens and guest privacy.
 
 ---
 
 ## 1. Summary
 
-- **Who can sign in:** only Google accounts whose email is an **active row in `admin_users`**.
-  Everyone else is rejected **before an account is created**.
-- **Visitors never sign in** in v1. All public content is readable anonymously through RLS.
-- **Defence in depth:** `proxy.ts` → admin layout → every server action / route handler → Postgres
-  RLS. Any single layer failing still leaves the others.
-- **Untrusted HTML never runs next to the admin session.** Roadmap bundles execute only on the
-  separate content origin, which has no auth cookies.
+- **Anyone** can create a **guest** account with Google or GitHub. **Admin rights** (`owner`,
+  `editor`) come only from an active row in `admin_users`.
+- **Anonymous visitors** read everything public; progress and CP tracking need an account.
+- **Defence in depth for admin:** `proxy.ts` → admin layout → every server action/route handler →
+  RLS (`private.is_admin()` checks the table on every query, so revocation is instant).
+- **Guest data isolation:** every user-owned table has RLS `user_id = auth.uid()`; guest writes to
+  progress go through validated server endpoints.
+- **Author HTML (topics and posts) never runs on the main origin.** It runs on the content origin,
+  which holds only a narrow, HttpOnly reader session scoped to progress.
 
-## 2. Google OAuth setup (one-time, owner)
+## 2. Identity providers & sign-up policy
 
 | Step | Where | Setting |
 |---|---|---|
-| 1 | Google Cloud Console → *APIs & Services → OAuth consent screen* | User type **External**; app name "eyasir329.dev admin"; scopes `openid`, `email`, `profile` only; publishing status **In production** (no sensitive scopes, so no verification review) |
-| 2 | *Credentials → Create OAuth client ID → Web application* | Authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback` (one client per Supabase project: staging and production) |
-| 3 | Supabase → *Authentication → Providers → Google* | Enable; paste client ID and secret (stored by Supabase, **not** in the app) |
-| 4 | Supabase → *Authentication → URL configuration* | Site URL `https://eyasir329.dev`; redirect allowlist: `https://eyasir329.dev/auth/callback`, `http://localhost:3000/auth/callback`, Vercel preview pattern for the staging project only |
-| 5 | Supabase → *Authentication → Hooks* | **Before User Created** → `public.hook_before_user_created`; **Custom Access Token** → `public.custom_access_token_hook` |
-| 6 | Supabase → *Authentication → Providers → Email* | **Disabled** (Google is the only way in) |
-| 7 | Supabase → *Auth settings* | JWT expiry 3600 s (default); refresh-token rotation on; reuse interval 10 s |
+| 1 | Google Cloud → OAuth consent screen | External; scopes `openid email profile`; in production |
+| 2 | Google Cloud → OAuth client (per Supabase project) | Redirect URI `https://<ref>.supabase.co/auth/v1/callback` |
+| 3 | **GitHub → Developer settings → OAuth App** (per Supabase project) | Callback `https://<ref>.supabase.co/auth/v1/callback`; scope `read:user user:email` only |
+| 4 | Supabase → Auth → Providers | Google ✅, GitHub ✅ (`Q-26`), Email ❌ |
+| 5 | Supabase → Auth → URL configuration | Site URL `https://eyasir329.dev`; redirects `https://eyasir329.dev/auth/callback`, localhost, staging previews |
+| 6 | Supabase → Auth → Hooks | **Before User Created** → `hook_before_user_created` (blocks disposable domains and banned emails; everything else becomes a guest) · **Custom Access Token** → `custom_access_token_hook` (`app_role` = owner/editor/guest, `user_status`) |
+| 7 | Supabase → Auth → settings | JWT expiry 3600 s; refresh-token rotation on; **manual account linking** off (different providers with the same email become separate accounts unless the user links them in `/me/settings`) |
 
-## 3. Sign-in flow
+## 3. Main-origin sign-in flow
 
 ```mermaid
 sequenceDiagram
-  participant U as Admin browser
-  participant N as Next.js
+  participant U as Browser
+  participant N as Next.js (eyasir329.dev)
   participant S as Supabase Auth
-  participant G as Google
+  participant P as Google / GitHub
   participant DB as Postgres
-  U->>N: GET /admin/login
-  U->>N: click "Continue with Google" (server action)
-  N->>S: signInWithOAuth(google, redirectTo=/auth/callback?next=…) with PKCE
-  S-->>U: 302 to Google consent
-  U->>G: consent
-  G-->>S: code
-  alt first sign-in (no auth.users row)
-    S->>DB: hook_before_user_created(event)
-    DB-->>S: reject unless email is an active admin_users row
+  U->>N: /login?return=… (or /admin/login)
+  U->>N: "Continue with Google/GitHub" (server action)
+  N->>S: signInWithOAuth(provider, PKCE, redirectTo=/auth/callback?return=…)
+  S-->>U: 302 provider consent
+  U->>P: consent
+  P-->>S: code
+  alt first sign-in
+    S->>DB: hook_before_user_created → allow unless blocked
+    DB->>DB: handle_new_user → user_profiles row, link admin_users by email
   end
-  S->>DB: custom_access_token_hook → add app_role claim
+  S->>DB: custom_access_token_hook → app_role
   S-->>U: 302 /auth/callback?code=…
-  U->>N: GET /auth/callback
-  N->>S: exchangeCodeForSession(code)
-  S-->>N: session → set cookies (Secure, SameSite=Lax, host-only)
-  N->>N: verify claims + active admin row
-  N-->>U: 302 to next (validated as same-origin path)
+  U->>N: /auth/callback
+  N->>S: exchangeCodeForSession
+  N-->>U: session cookies (host-only, Secure, SameSite=Lax)
+  alt return is a content-origin URL
+    N-->>U: 303 /auth/bridge?return=… (see §5.2)
+  else admin return and role ok
+    N-->>U: 303 /admin…
+  else
+    N-->>U: 303 /me (or the validated return path)
+  end
 ```
-
-**Edge cases:**
 
 | Case | Behaviour |
 |---|---|
-| Non-allowlisted Google account | Sign-up rejected by the hook → callback receives an error → `/admin/login?error=not_authorised`. No `auth.users` row exists |
-| Allowlisted user later deactivated (`is_active=false`) | `private.is_admin()` fails immediately in RLS (it checks the table, not only the claim); proxy/layout also re-check → sign-out + message |
-| Existing user whose email was removed from `admin_users` | Same as above; the owner can additionally delete the auth user from `/admin/users` |
-| `next` parameter tampering | Only relative paths starting with `/admin` are accepted; anything else → `/admin` |
-| Owner locked out (e.g. lost Google access) | Break-glass: run the documented SQL with the Supabase dashboard (project owner login) to add a new owner email ([14 §8](14-devops-and-environments.md)) |
+| Guest opens `/admin/**` | 403 page ("This area is for site administrators"), no redirect loop, no admin data |
+| Allowlisted email signs in | Same account system; `app_role` = owner/editor → admin allowed |
+| Allowlisted admin later deactivated | `is_admin()` fails at once in RLS; proxy/layout re-check → admin area hidden; the account stays a guest |
+| Banned user | Hook denies new sessions; existing reader sessions revoked; API returns 403 |
+| `return` tampering | Only relative main-origin paths or URLs on the content origin are accepted |
+| Owner locked out | Break-glass SQL runbook ([14 §8](14-devops-and-environments.md)) |
 
 ## 4. Authorisation
 
-### 4.1 Roles & permissions
+### 4.1 Roles & capabilities
 
-| Capability | editor | owner |
-|---|:-:|:-:|
-| Read admin dashboard, content, messages, sync logs, audit log | ✅ | ✅ |
-| Create/edit/publish content (profile, projects, experience, education, skills, certs, CP, blog, media, resume) | ✅ | ✅ |
-| KB: upload, import, preview, publish, rollback | ✅ | ✅ |
-| KB: delete a roadmap / purge versions | ❌ | ✅ |
-| Run sync now | ✅ | ✅ |
-| Site settings (SEO, nav, home sections, flags) | ✅ | ✅ |
-| Security settings, allowlist and roles | ❌ | ✅ |
-| API tokens | ❌ | ✅ |
-| Delete messages permanently | ❌ | ✅ |
+| Capability | anonymous | guest | editor | owner |
+|---|:-:|:-:|:-:|:-:|
+| Read public content | ✅ | ✅ | ✅ | ✅ |
+| Save roadmap progress; `/me`; export/delete own data | ❌ | ✅ | ✅ | ✅ |
+| Link judge accounts; CP tracking; extension token (`cp:ingest`) | ❌ | ✅ | ✅ | ✅ |
+| Admin panel: content, bundles, messages, sync, settings | ❌ | ❌ | ✅ | ✅ |
+| Users: view list | ❌ | ❌ | ✅ | ✅ |
+| Users: ban/unban, delete; allowlist & roles; CLI tokens; security settings; purge bundles | ❌ | ❌ | ❌ | ✅ |
 
 ### 4.2 Enforcement layers
 
-| Layer | Check | Failure |
+| Layer | Admin routes | Guest routes (`/me/**`, reader API) |
 |---|---|---|
-| `proxy.ts` (all `/admin/**` except `/admin/login`) | Refreshes the session with `@supabase/ssr`; validates the JWT with `getClaims()` (local verification with asymmetric signing keys); requires the `app_role` claim | Redirect to login |
-| `app/(admin)/admin/layout.tsx` | `requireRole('editor')`: confirms the active admin row (DB lookup, cached per request) | `notFound()` / redirect |
-| Server actions & route handlers | `requireRole(min)` at the top of **every** action; owner-only actions call `requireRole('owner')` | Typed `{ ok:false, code:'FORBIDDEN' }` |
-| Postgres RLS | `(select private.is_admin())` / `is_owner()` in policies | Query returns 0 rows / write rejected |
+| `proxy.ts` | Session refresh; `getClaims()`; requires `app_role ∈ {owner, editor}` | Session refresh; requires a session for `/me/**` (else `/login?return=`) |
+| Layouts | `requireRole('editor')` (DB check) | `requireUser()` (status active) |
+| Actions / handlers | `requireRole(min)` in every action | `requireUser()` + ownership checks on every id |
+| RLS | `private.is_admin()` / `is_owner()` | `user_id = (select auth.uid())` |
 
-`getSession()` is **never** trusted on the server (it doesn't revalidate the token).
+## 5. Sessions & cookies
 
-### 4.3 API tokens (for the KB CLI)
-
-- Created by the owner in `/admin/tokens`; plaintext shown **once** (`kbt_` + 32 random bytes,
-  base62). Only its SHA-256 hash is stored.
-- Scopes: `kb:read`, `kb:write`, `kb:publish`; expiry required (≤ 90 days); revocable.
-- Sent as `Authorization: Bearer kbt_…` to `/api/kb/*` only. Token routes use the service client but
-  enforce scope + roadmap checks in code, and every call is audit-logged with the token's prefix.
-
-## 5. Session & cookie security
+### 5.1 Main origin
 
 | Item | Setting |
 |---|---|
-| Cookie scope | **Host-only** on the apex (no `Domain=` attribute), so the `kb.` subdomain never receives it. Name prefixed `__Host-` if `@supabase/ssr` cookie-name options allow it (`SP-03`) |
-| Flags | `Secure`, `SameSite=Lax`, `Path=/` |
-| CSRF | Server Actions: Next.js checks `Origin` against `Host` (built-in). Route handlers that mutate require `Content-Type: application/json` + an Origin check or a bearer token |
-| Idle | Admin UI signs out after 12 h of inactivity (client timer + short JWT) |
+| Cookies | Supabase SSR cookies, **host-only** on the apex (never sent to `read.`), `Secure`, `SameSite=Lax`; `__Host-` prefix if supported (`SP-03`) |
+| CSRF | Server Actions: built-in `Origin` check. Mutating route handlers: `Origin` must equal the main origin, or bearer-token auth |
+| Idle | Admin: sign-out after 12 h idle. Guests: standard refresh (weeks) |
 
-## 6. Content-origin isolation (Roadmap Docs)
+### 5.2 Content-origin reader session (bridge)
 
-**Threat:** bundle HTML contains inline JavaScript (the reference page has three inline scripts). If
-it ran on the main origin, a malicious or compromised bundle could read the Supabase session from
-cookies/localStorage and act as the admin.
+| Item | Setting |
+|---|---|
+| Issue | `GET /auth/bridge?return=` (main origin, requires a session) → random 32-byte code, SHA-256 stored in `private.reader_bridge_codes` (60 s, single use, bound to `user_id` and `return`) → 303 to `read…/__auth/callback?code&return` |
+| Exchange | Content origin consumes the code (atomic `update … where used_at is null and expires_at > now()`), creates `private.reader_sessions`, sets `__Host-rt_session` (random 32 bytes; only the hash stored; `HttpOnly; Secure; SameSite=Lax; Path=/`) and `rt_signed_in=1` (non-secret hint) |
+| Lifetime | 30 days sliding; revoked on sign-out (either origin), "sign out everywhere", ban, deletion |
+| Scope | The reader session can **only** call `/__api/*` (own progress, visits, own display name/avatar). It is not a Supabase JWT and grants nothing on the main origin |
+| CSRF (`/__api/*`) | `SameSite=Lax` + `Content-Type: application/json` + custom header `X-RT: 1` + `Origin` = content origin. Cross-site forms can't meet these conditions |
+
+## 6. Content-origin isolation (topics **and** blog posts)
+
+**Threat:** author HTML contains JavaScript (the reference topic has three inline scripts; HTML
+posts can have any). On the main origin, a malicious or compromised script could read the Supabase
+session or call admin server actions.
 
 **Controls:**
 
-1. Bundles are served **only** from `kb.eyasir329.dev` (a different origin). The main origin never
-   serves bundle files, and `/_kb/*` returns 404 on the apex host.
-2. No auth cookies exist on the content origin. Preview access uses a signed, path-scoped,
-   short-lived token (HMAC-SHA256 with `KB_PREVIEW_SECRET`, `exp` ≤ 30 min, bound to a version id).
-3. A strict CSP on the content origin blocks network exfiltration (`connect-src 'none'`,
-   `form-action 'none'`), while still allowing the bundles' own inline scripts and styles.
-4. The admin preview embeds the content origin in an `<iframe sandbox="allow-scripts
-   allow-popups">` (no `allow-same-origin`), so even the preview runs in an opaque origin.
-5. If there's no custom domain (`A-01`), use a separate `*.vercel.app` alias; `vercel.app` is on the
-   Public Suffix List, so it's a different site entirely.
+1. Topics and posts are served **only** from `read.eyasir329.dev`. `/_content/*` returns 404 on the
+   main host; the main site's `/blog/[slug]` is a redirect, never a render.
+2. Main-origin cookies never reach the content origin (host-only). The content origin has only
+   the narrow reader session (§5.2).
+3. CSP on the content origin allows the bundles' inline scripts but restricts network access to
+   **same origin only** (`connect-src 'self'`, for the reader API) and forbids form posts elsewhere.
+4. Admin previews run in `<iframe sandbox="allow-scripts allow-popups">` (opaque origin; no cookies,
+   no reader API).
+5. Without a custom domain, a separate `*.vercel.app` alias still gives a different site (Public
+   Suffix List). The bridge doesn't depend on shared cookies.
 
-> Why not just an iframe on the main site, or Supabase public URLs? See ADR-004 in
-> [17](17-risks-and-decisions.md): Supabase Storage serves `.html` as `text/plain` on its default
-> domain, and an iframe on the main origin hurts SEO and deep-linking while adding no isolation
-> beyond what a separate origin gives.
+**Accepted residual risk:** bundle JS shares the content origin with the runtime, so it could call
+`/__api/*` as the current reader, which would affect only that reader's progress data. Bundles are
+owner-authored (ADR-015).
 
 ## 7. Content Security Policy & headers
 
-### 7.1 Main origin (public pages)
+### 7.1 Main origin (public, `/me`)
 
 ```text
 default-src 'self';
 script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://va.vercel-scripts.com;
 style-src 'self' 'unsafe-inline';
-img-src 'self' data: blob: https://<project-ref>.supabase.co https://avatars.githubusercontent.com https://i.ytimg.com;
+img-src 'self' data: blob: https://<ref>.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://i.ytimg.com;
 font-src 'self';
-connect-src 'self' https://<project-ref>.supabase.co https://*.ingest.sentry.io https://vitals.vercel-insights.com;
+connect-src 'self' https://<ref>.supabase.co https://*.ingest.sentry.io https://vitals.vercel-insights.com;
 frame-src https://www.youtube-nocookie.com https://challenges.cloudflare.com;
-worker-src 'self' blob:;
-object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';
+object-src 'none'; base-uri 'self'; form-action 'self' https://<ref>.supabase.co; frame-ancestors 'none';
 upgrade-insecure-requests
 ```
 
-`'unsafe-inline'` for scripts is needed for statically cached pages (nonces force dynamic rendering).
-The risk is contained because the main origin **never renders user-supplied HTML**: Markdown is
-rendered without raw HTML, and the only author is the admin. `SP-04` evaluates Next.js hash-based
-CSP (SRI) to remove `'unsafe-inline'` if it's stable.
+The main origin renders **no author HTML** (Markdown fields are rendered without raw HTML), so
+`'unsafe-inline'` for scripts is contained. `SP-04` checks whether hash-based CSP can remove it.
 
 ### 7.2 Main origin (`/admin/**`)
 
-Same as above, but `script-src 'self' 'nonce-{random}' 'strict-dynamic'` (admin is dynamic anyway),
-`frame-src https://kb.eyasir329.dev` (preview) and `connect-src` extended for Storage uploads.
+Nonce-based `script-src 'self' 'nonce-…' 'strict-dynamic'`; `frame-src https://read.eyasir329.dev`
+(previews); `connect-src` adds Storage upload endpoints.
 
 ### 7.3 Content origin
 
@@ -169,104 +173,95 @@ img-src 'self' data: https://i.ytimg.com;
 media-src 'self';
 font-src 'self' data:;
 frame-src https://www.youtube-nocookie.com;
-connect-src 'none';
-form-action 'none';
+connect-src 'self';
+form-action 'self';
 base-uri 'none';
 object-src 'none';
 frame-ancestors 'self' https://eyasir329.dev;
 ```
 
-Per-roadmap additions (`kb_roadmaps.csp_extra`) are allow-listed by the owner (e.g. a KaTeX CDN or
-Pyodide for runnable code in future bundles). `connect-src` stays `'none'` unless the owner
-explicitly opts in for that roadmap.
+Per-roadmap/per-post `csp_extra` (owner-approved), e.g. `script-src https://cdn.jsdelivr.net` for a
+charting library in a post. `connect-src` to third parties requires an explicit owner opt-in.
 
 ### 7.4 Headers on every response
 
-| Header | Value |
-|---|---|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` (added after the domain is stable) |
-| `X-Content-Type-Options` | `nosniff` (critical on the content origin: every file gets an explicit type) |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
-| `Cross-Origin-Opener-Policy` | `same-origin` (main); `same-origin-allow-popups` (kb, for YouTube links) |
-| `X-Robots-Tag` | `noindex` on admin, API, previews and coming-soon pages |
+HSTS (preload after stabilising) · `X-Content-Type-Options: nosniff` · `Referrer-Policy:
+strict-origin-when-cross-origin` · `Permissions-Policy: camera=(), microphone=(), geolocation=(),
+payment=(), usb=()` · COOP (`same-origin` main; `same-origin-allow-popups` content origin) ·
+`X-Robots-Tag: noindex` on admin, `/me`, APIs, previews, coming-soon.
 
 ## 8. Threat model (STRIDE)
 
 | # | Threat | Asset | Mitigation | Residual |
 |---|---|---|---|---|
-| S1 | **Spoofing:** stranger signs in with Google | Admin | Before-user-created hook + allowlist; RLS checks the table | Low |
-| S2 | Stolen admin session cookie | Admin | Host-only Secure cookies; short JWT; no untrusted JS on the main origin; strict admin CSP | Low |
-| T1 | **Tampering:** malicious bundle (zip slip) writes outside its folder | Storage | Paths normalised; reject absolute, `..`, backslashes, NUL, symlinks; content-addressed storage (no path-based writes) | Very low |
-| T2 | Zip bomb / resource exhaustion | Functions | Max 100 MB zip, 300 MB uncompressed, 3,000 files, 25 MB per file, ratio > 100:1 rejected; streaming unzip with counters | Low |
-| T3 | Stored XSS through Markdown | Visitors | No raw HTML in Markdown; directive components whitelist props; URLs validated (`https:`, `mailto:`, relative) | Low |
-| R1 | **Repudiation:** "who published this?" | Integrity | `audit_log` via triggers + action-level entries; append-only | Low |
-| I1 | **Information disclosure:** drafts leak via the API | Content | RLS published-only for anon; preview tokens expire; drafts `noindex` | Low |
-| I2 | Secret key leaks into the client bundle | Everything | Server-only modules; CI grep for `sb_secret_`/`SUPABASE_SECRET` in `.next/static`; env var naming | Low |
-| I3 | Copyrighted book excerpts in bundle `data/` published | Legal | `private_globs` default `data/**`; owner confirmation (`Q-14`) | Medium until decided |
-| D1 | **Denial of service:** contact form spam | Inbox, email quota | Turnstile + 5/h/IP + length limits + spam status | Low |
-| D2 | Hammering the content origin | Bandwidth | CDN caching (cache hits never reach Supabase); Vercel Firewall rules if needed | Low |
-| E1 | **Elevation of privilege:** editor becomes owner | Admin | Role changes owner-only (RLS + action check); owner cannot demote the last owner (constraint trigger) | Low |
-| E2 | Bundle JS exfiltrates visitor data from the KB origin | Visitors | Nothing sensitive lives on the KB origin; `connect-src 'none'`, `form-action 'none'` | Very low |
+| S1 | Someone gains admin by signing up | Admin | Admin = allowlist only; RLS checks the table; guest role has no admin policies | Low |
+| S2 | Stolen admin cookie | Admin | Host-only cookies; no author JS on the main origin; strict admin CSP | Low |
+| S3 | **Account takeover of a guest** via the bridge (code theft, open redirect) | Guest data | 60 s single-use codes bound to user + return URL; return URL allowlist; HTTPS only | Low |
+| T1 | Zip slip / zip bomb in bundles | Storage/functions | Path normalisation, CAS writes, streaming limits | Very low |
+| T2 | **Forged progress or solves** (a user writes others' rows) | Integrity | Writes only through validated endpoints; RLS own-rows; keys validated against the node | Low |
+| T3 | **Fake solves via the extension** | Integrity (private stats) | Token scoped `cp:ingest`; only the user's linked handles; source marked `extension`; public stats use API data only | Low (self-harm only) |
+| R1 | "Who published/banned this?" | Integrity | `audit_log` | Low |
+| I1 | Drafts leak | Content | RLS; signed previews | Low |
+| I2 | **Guest personal data exposure** (emails, progress, handles) | Privacy | RLS own-rows; admin sees aggregates for progress; exports only to the owner of the data; no public profiles | Low |
+| I3 | Secret key in the client bundle | Everything | Server-only modules; CI grep | Low |
+| I4 | Copyrighted `data/` excerpts published | Legal | Private by default (`Q-14`) | Medium until decided |
+| D1 | Contact spam | Inbox | Turnstile + rate limits | Low |
+| D2 | **Sign-up abuse / bot accounts** | Quotas | OAuth-only sign-up; disposable-domain blocklist; ban; per-user rate limits on sync and API | Low |
+| D3 | **Judge sites blocking us** (too many requests) | Availability of CP data | Per-platform budgets, backoff, caching, low frequency, kill switches | Medium (fragile judges) |
+| E1 | Editor becomes owner | Admin | Owner-only role changes; last-owner guard | Low |
+| E2 | Bundle JS abuses the reader API | Reader progress | Same-origin only; affects only the current reader; owner-authored bundles | Low (accepted) |
 
 ## 9. Input validation & output encoding
 
-- **Zod schemas** in `lib/validation/*` are shared by client forms (UX) and server actions (truth).
-  The server always re-parses.
-- **URLs** in content: only `https:`, `mailto:`, `tel:` and relative; `javascript:` and `data:`
-  (except images in media) are rejected.
-- **Files:** MIME sniffed from magic bytes (not the extension) for media uploads; SVG uploads to
-  `media` are sanitised (DOMPurify SVG profile) because they're served from the main origin. KB
-  SVGs are served as-is on the isolated origin.
-- **React** escapes text by default; `dangerouslySetInnerHTML` is used only for the Markdown
-  pipeline output (sanitised AST) and JSON-LD (`JSON.stringify` + `<` escaped).
+- Zod everywhere (shared schemas); URLs limited to `https:`, `mailto:`, `tel:` and relative.
+- **Reader API:** keys must be in the node's current `section_keys ∪ practice_keys`; batch ≤ 100
+  items; timestamps clamped to server time.
+- **Judge handles:** validated against `cp_platforms.handle_pattern`; existence checked through the
+  adapter before saving.
+- **Extension payloads:** size-limited; verdict normalised; timestamps sanity-checked; unknown
+  platforms rejected.
+- Media uploads: MIME sniffed; SVG sanitised (main origin). Bundle SVGs served as-is on the
+  isolated origin.
 
 ## 10. Rate limiting & abuse
 
-| Surface | Limit | Mechanism |
-|---|---|---|
-| Contact form | 5/h and 20/day per IP hash | Turnstile + `private.rate_limit` |
-| View beacon | 1 per entity per IP hash per 6 h | `increment_view` |
-| `/api/kb/*` with a token | 60/min per token | `private.rate_limit` |
-| Auth endpoints | Supabase built-in limits | Supabase |
-| Search | 30/min per IP hash | `private.rate_limit` |
+| Surface | Limit |
+|---|---|
+| Contact form | 5/h, 20/day per IP hash |
+| Reader API writes | 120/min per session (batched client) |
+| `/auth/bridge` | 20/min per user |
+| CP "Sync now" | 1 per account per 30 min; 10 per user per hour |
+| Extension ingestion | 600 submissions/min per token |
+| CLI | 60 req/min per token |
+| Search | 30/min per IP hash |
 
 ## 11. Secrets inventory
 
-| Secret | Where it lives | Used by | Rotation |
-|---|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Vercel env | Browser + server | — |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`) | Vercel env | Browser + server (RLS-bound) | Yearly |
-| `SUPABASE_SECRET_KEY` (`sb_secret_…`) | Vercel env (server only) | Services: cron, sync, contact insert, KB serve/import | Yearly or on suspicion |
-| Google OAuth client ID/secret | Supabase dashboard | Supabase Auth | Yearly |
-| `CRON_SECRET` | Vercel env + Supabase Vault | `/api/cron/*` | Yearly |
-| `REVALIDATE_WEBHOOK_SECRET` | Vercel env + Supabase Vault | `/api/revalidate` HMAC | Yearly |
-| `KB_PREVIEW_SECRET` | Vercel env | Preview tokens | Yearly (invalidates open previews) |
-| `IP_HASH_SALT_SEED` | Vercel env | Daily salt derivation | Yearly |
-| `GITHUB_TOKEN` (fine-grained, read-only public data) | Vercel env | GitHub sync | 90 days (expiry enforced by GitHub) |
-| `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Vercel env | Contact form | Yearly |
-| `RESEND_API_KEY` | Vercel env | Email | Yearly |
-| `SENTRY_DSN`, `SENTRY_AUTH_TOKEN` | Vercel env / CI | Errors, source maps | Yearly |
-| `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | GitHub Actions secrets | Migrations, backups | Yearly |
+| Secret | Where | Used by |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Vercel env | Browser + server (RLS-bound) |
+| `SUPABASE_SECRET_KEY` | Vercel env (server only) | Services: cron, workers, contact, bundle serving, reader API writes |
+| Google OAuth client, **GitHub OAuth app** secrets | Supabase dashboard | Supabase Auth |
+| `CRON_SECRET`, `REVALIDATE_WEBHOOK_SECRET` | Vercel env + Supabase Vault | Jobs |
+| `CONTENT_PREVIEW_SECRET` | Vercel env | Preview tokens |
+| `IP_HASH_SALT_SEED` | Vercel env | Rate limiting |
+| `GITHUB_TOKEN` | Vercel env | Owner GitHub sync |
+| `CLIST_API_USERNAME`, `CLIST_API_KEY` (optional) | Vercel env | CLIST fallback (`Q-31`) |
+| Turnstile, Resend, Sentry keys | Vercel env / CI | As before |
+| `SUPABASE_ACCESS_TOKEN`, DB password | GitHub Actions | Migrations, backups |
 
-Local development uses `.env.local` (git-ignored) and a checked-in `.env.example` with names only.
+## 12. Supply chain
 
-## 12. Dependency & supply-chain security
+Renovate, `pnpm audit`, frozen lockfile, pinned Actions, secret scanning + push protection. The
+browser extension (if forked) gets the same treatment, and its releases are signed by the store.
 
-- Renovate (weekly, grouped) with automerge only for patch updates of dev dependencies after CI
-  passes.
-- `pnpm audit --prod` in CI (fail on high/critical); GitHub secret scanning + push protection on.
-- Lockfile committed; `pnpm install --frozen-lockfile` in CI; no `postinstall` scripts from
-  untrusted packages (`onlyBuiltDependencies` allowlist in `pnpm` config).
-- GitHub Actions pinned to commit SHAs; minimal `permissions:` per workflow.
+## 13. Incident response
 
-## 13. Incident response (mini runbook)
-
-1. **Suspected admin compromise:** revoke sessions (Supabase → Auth → sign out user), rotate
-   `SUPABASE_SECRET_KEY`, rotate Google OAuth secret, review `audit_log`, restore content from
-   backup if needed.
-2. **Malicious KB bundle discovered:** roll back or unpublish the node (one click); purge the CDN tag;
-   review the import audit entries; the content-origin CSP limits the blast radius.
-3. **Secret committed to git:** rotate immediately (history rewrite doesn't un-leak it); push
-   protection should prevent this in the first place.
-4. Record every incident as a short post-mortem in `docs/incidents/YYYY-MM-DD-*.md`.
+1. **Admin compromise:** revoke sessions, rotate the secret key and OAuth secrets, review
+   `audit_log`, restore if needed.
+2. **Guest data incident:** contain (revoke sessions/tokens), assess scope, notify affected users by
+   email within 72 hours, post-mortem.
+3. **Malicious bundle/post:** unpublish or roll back, purge the CDN tag; CSP limits the blast radius.
+4. **Judge complaint about scraping:** disable that platform's scraping flag immediately; switch to
+   extension-only.
+5. Post-mortems in `docs/incidents/`.

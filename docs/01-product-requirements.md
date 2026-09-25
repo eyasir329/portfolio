@@ -1,6 +1,10 @@
 # 01 — Product Requirements Document (PRD)
 
-> Status: **Draft v0.1** · Related: [00 Charter](00-project-charter.md), [02 NFRs](02-non-functional-requirements.md), [03 IA](03-information-architecture.md), [16 Delivery](16-delivery-plan.md)
+> Status: **Draft v0.2** · Related: [00 Charter](00-project-charter.md), [02 NFRs](02-non-functional-requirements.md), [03 IA](03-information-architecture.md), [16 Delivery](16-delivery-plan.md)
+>
+> **Revision 0.2 changes:** blog posts are **full HTML** (FR-BLOG rewritten); **guest accounts** with
+> a reader panel (FR-GUEST); **roadmap progress only for signed-in readers** (FR-PROG);
+> **CP tracking on 10 judges** for the owner and for guests (FR-CP, FR-CPT, FR-SYNC).
 
 ---
 
@@ -8,21 +12,23 @@
 
 | ID | Persona | Context | Needs | Frustrations |
 |---|---|---|---|---|
-| `P-01` | **Rina, technical recruiter** | Screens 40 candidates a day, often on a phone between calls; ~60–90 s per profile | Role fit, stack keywords, 2–3 standout projects, CV PDF, a contact route | Slow sites, heavy animations that block content, no CV link, vague claims |
-| `P-02` | **Tanvir, senior engineer / interviewer** | Desktop, has time, is sceptical | Architecture decisions, trade-offs, real code (GitHub), writing quality, CP depth | Buzzwords, screenshots with no substance, broken demos |
-| `P-03` | **Nabila, CS student / CP learner** | Phone at night (dark mode), reading in short sessions | A clear roadmap, readable topic pages, progress that remembers where they stopped, practice problems | Walls of text, losing their place, pages that break offline or on slow data |
-| `P-04` | **Eyasir, owner / admin** | Laptop; wants to fix a typo in 30 s and push 60 topics in one go | Fast editing, bulk import, preview before publish, rollback, confidence nothing breaks | Having to redeploy, manual copy-paste, silent sync failures |
+| `P-01` | **Rina, technical recruiter** | Screens 40 candidates a day, often on a phone; ~60–90 s per profile | Role fit, stack keywords, 2–3 standout projects, CV PDF, a contact route | Slow sites, heavy animations that block content, no CV link, vague claims |
+| `P-02` | **Tanvir, senior engineer / interviewer** | Desktop, has time, sceptical | Architecture decisions, trade-offs, real code, writing quality, CP depth | Buzzwords, screenshots without substance |
+| `P-03` | **Nabila, CS student / CP learner** | Reads roadmap topics on a phone at night, in short sessions, on two devices | A clear roadmap, readable topics, **progress saved to their account** and synced across devices, practice problems | Losing their place, progress stuck on one device, walls of text |
+| `P-04` | **Eyasir, owner / admin** | Laptop; fixes a typo in 30 s, pushes 60 topics at once, writes posts in HTML | Fast editing, bulk import, an HTML editor with live preview, rollback, confidence nothing breaks | Redeploys, manual copy-paste, silent sync failures |
 | `P-05` | **Organiser / collaborator** | Arrives from a contest page, Discord or GitHub | Who Eyasir is, the club (NEUPC), how to get in touch | Hidden contact details |
+| `P-06` | **Arif, competitive programmer (guest)** | Active on Codeforces, AtCoder, LeetCode, VJudge; follows the CP roadmap | **One place** that tracks solves and ratings across judges, and ticks roadmap practice problems automatically | Checking five sites; manual spreadsheets |
 
 ### 1.1 Key journeys
 
 | Journey | Steps | Success looks like |
 |---|---|---|
-| J-1 Recruiter skim (`P-01`) | Lands on Home → reads the hero line → scans the proof strip → opens a featured project **or** downloads the CV | CV or project reached in ≤ 2 clicks, with no 3D blocking the first paint |
-| J-2 Engineer deep dive (`P-02`) | Project case study → architecture section → GitHub repo → related blog post | Case study explains decisions; stars and last commit shown live |
-| J-3 Learner study session (`P-03`) | `/docs` → CP roadmap → picks the next unread topic → reads, ticks "mark read", solves practice problems → next topic | Progress remembered; the roadmap shows where to continue |
-| J-4 Owner publishes a topic (`P-04`) | Admin → Docs → Upload zip → review validation report → preview → Publish | Live within 1 minute; the previous version is one click away |
-| J-5 Owner fixes content (`P-04`) | Admin → Projects → edit → Save | Public page updated within seconds, with no deploy |
+| J-1 Recruiter skim (`P-01`) | Home → hero line → proof strip → featured project **or** CV | CV or project in ≤ 2 clicks; 3D never blocks the first paint |
+| J-2 Engineer deep dive (`P-02`) | Case study → architecture → GitHub → related post | Decisions explained; live repo stats |
+| J-3 Learner study session (`P-03`) | Opens a topic → sees "Sign in to track progress" → signs in with Google (one redirect) → ticks "mark read" → continues on another device from `/me` → "Continue where you left off" | Progress saved to the account and identical on both devices |
+| J-4 Owner publishes a topic (`P-04`) | Admin → Docs → upload zip → report → preview → Publish | Live within 60 s; the previous version is one click away |
+| J-5 Owner writes a post (`P-04`) | Admin → Blog → New from template → edit HTML with live preview → add assets → Save version → Schedule | Post goes live at the scheduled time, rendered exactly as written |
+| J-6 Guest tracks CP (`P-06`) | `/me/cp` → link Codeforces, AtCoder, VJudge handles → sync → sees combined solves and ratings → roadmap practice problems already ticked as "verified" | Accurate numbers within minutes; nothing typed by hand |
 
 ---
 
@@ -39,25 +45,27 @@ mindmap
       Resume
       Contact
     CP Journey
-      Judge profiles
-      Rating history
+      10 judges synced
       Contests: ICPC and IUPC
       Colonnade 3D
     Blog
-      Posts
-      Tags and series
-      RSS and OG
+      Full HTML posts
+      HTML editor and templates
+      Tags, series, RSS
     Roadmap Docs
-      Catalog
-      Roadmap map
-      Topic bundles on content origin
+      Catalog and map
+      Topic bundles on the content origin
       Generated index pages
+    Reader accounts
+      Google or GitHub sign-in
+      Progress synced when signed in
+      Reader panel at /me
+      CP tracking on 10 judges
     Admin
-      Google login + allowlist
+      Allowlisted admins
       CRUD everything
-      Bundle importer + CLI
-      Sync centre
-      Messages, settings, audit
+      Bundle engine and CLI
+      Users, readers, sync, audit
 ```
 
 ---
@@ -70,235 +78,291 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-GEN-01 | A persistent header shows the wordmark, primary navigation (Work, Experience, CP, Blog, Docs, About), a search trigger, the theme toggle and a "Contact" call to action. Collapses to a menu below 768 px | M |
-| FR-GEN-02 | Light, dark and system themes. The choice is persisted, with no flash of the wrong theme (an inline script sets it before first paint) | M |
-| FR-GEN-03 | Global search (⌘K / Ctrl K / `/`) across projects, posts, docs topics (section-level deep links) and static pages | S |
-| FR-GEN-04 | The footer "colophon" shows social links, an RSS link, "last updated", a "set in…/built with…" line and a copyright notice | M |
-| FR-GEN-05 | Availability badge ("Open to: Software Engineering · DevOps & Cloud · QA · AI/ML"), editable and hideable | S |
-| FR-GEN-06 | Fully responsive from 320 px to ≥ 1920 px, with no horizontal scroll | M |
-| FR-GEN-07 | Custom 404 (optional 3D "broken column") and error pages with a way back | S |
-| FR-GEN-08 | Respects `prefers-reduced-motion`. A user-facing "3D: on/off" toggle is persisted | M |
-| FR-GEN-09 | Privacy-friendly analytics with no tracking cookies, so no cookie banner is needed | S |
-| FR-GEN-10 | Announcement bar (text + link, admin-controlled, dismissible, expiry date) | C |
-| FR-GEN-11 | Print stylesheet for About, Projects and Blog posts (clean black-on-white, URLs printed) | C |
+| FR-GEN-01 | Persistent header: wordmark, primary navigation (Work, Experience, CP, Blog, Docs, About), search trigger, theme toggle, account entry (FR-GEN-12), "Contact" call to action. Collapses below 768 px | M |
+| FR-GEN-02 | Light, dark and system themes, persisted, with no flash of the wrong theme | M |
+| FR-GEN-03 | Global search (⌘K / Ctrl K / `/`) across projects, posts (section-level), docs topics (section-level) and static pages | S |
+| FR-GEN-04 | Footer colophon: social links, RSS, "last updated", "built with", copyright/licence | M |
+| FR-GEN-05 | Availability badge ("Open to: Software Engineering · DevOps & Cloud · QA · AI/ML"), editable | S |
+| FR-GEN-06 | Fully responsive 320 px → ≥ 1920 px | M |
+| FR-GEN-07 | Custom 404 (optional 3D "broken column") and error pages | S |
+| FR-GEN-08 | Respects `prefers-reduced-motion`; user "3D on/off" toggle persisted | M |
+| FR-GEN-09 | Privacy-friendly analytics; no tracking cookies | S |
+| FR-GEN-10 | Announcement bar (admin-controlled) | C |
+| FR-GEN-11 | Print stylesheet for About and Projects | C |
+| FR-GEN-12 | Account entry in the header: "Sign in" for visitors (subtle, not a primary CTA); avatar menu for signed-in users (My progress, CP tracking, Settings, Admin if allowed, Sign out) | M |
 
 ### 3.2 Home (`FR-HOME`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-HOME-01 | Hero: name, role line ("Full-Stack Developer · Software Engineer"), a 1–2 sentence positioning statement, CTAs **View work** and **Download CV**, and the 3D "Plaster Graph" (with poster fallback) | M |
-| FR-HOME-02 | Proof strip: 4–6 key figures (e.g. *1000+ problems solved*, *ICPC 2025 Dhaka — 112th, Divisional Champion*, *Codeforces max 1101*, *N public repos*). Values come from the DB or sync; each links to its evidence | M |
+| FR-HOME-01 | Hero: name, role line, positioning statement, CTAs **View work** and **Download CV**, 3D "Plaster Graph" (poster fallback) | M |
+| FR-HOME-02 | Proof strip: 4–6 key figures from DB/sync (combined solves across judges, ICPC 2025 Dhaka line, CF max rating, public repos…), each linked to evidence | M |
 | FR-HOME-03 | "Selected work": 3 featured projects as wall-label cards | M |
-| FR-HOME-04 | CP highlight block linking to `/cp` | M |
-| FR-HOME-05 | "Latest writing": 3 most recent posts; the section hides when there are none | S |
-| FR-HOME-06 | "From the docs": featured roadmaps and recently updated topics | S |
-| FR-HOME-07 | Journey teaser: 4–6 timeline milestones (education, leadership, contests) | S |
+| FR-HOME-04 | CP highlight block → `/cp` | M |
+| FR-HOME-05 | "Latest writing": 3 most recent posts (hidden when none) | S |
+| FR-HOME-06 | "From the docs": featured roadmaps, recently updated topics | S |
+| FR-HOME-07 | Journey teaser: 4–6 milestones | S |
 | FR-HOME-08 | Closing contact call to action | M |
-| FR-HOME-09 | Section order and visibility are configurable in admin | S |
+| FR-HOME-09 | Section order/visibility configurable in admin | S |
 
 ### 3.3 About (`FR-ABOUT`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-ABOUT-01 | Long bio (Markdown) with an optional portrait (credited, alt text required) | M |
-| FR-ABOUT-02 | Education: degree, institution, dates, result (e.g. CGPA 3.51/4.00), notes | M |
-| FR-ABOUT-03 | Skills grouped by category (Languages, Frontend, Backend & DB, Tools & DevOps, Concepts). **No percentage bars.** Optionally links to the projects that used each skill | M |
-| FR-ABOUT-04 | Certifications: title, issuer, date, credential link, short description | M |
-| FR-ABOUT-05 | Leadership and activities summary (links to Experience) | S |
-| FR-ABOUT-06 | "Now" block (what I'm focused on this month) | C |
-| FR-ABOUT-07 | "Uses" (hardware, editor, tools) | C |
+| FR-ABOUT-01 | Long bio (Markdown) + optional portrait | M |
+| FR-ABOUT-02 | Education | M |
+| FR-ABOUT-03 | Skills grouped by category (no percentage bars) | M |
+| FR-ABOUT-04 | Certifications | M |
+| FR-ABOUT-05 | Leadership & activities summary | S |
+| FR-ABOUT-06 | "Now" block | C |
+| FR-ABOUT-07 | "Uses" | C |
 
 ### 3.4 Projects (`FR-PROJ`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-PROJ-01 | Index listing all published projects; filter by stack, type and status; default order is featured first, then most recent | M |
-| FR-PROJ-02 | Card uses the "museum wall label" pattern: **title**, years, *Medium:* stack, one-line summary, status (Ongoing / Completed / Maintained / Archived) | M |
-| FR-PROJ-03 | Detail page (case study): overview, problem, my role, architecture (diagram image or Mermaid), key features, challenges and decisions, results/metrics, gallery, links (repo, live, demo video), stack, related posts and docs | M |
-| FR-PROJ-04 | Projects linked to a GitHub repo show live stars, forks, primary languages and last-commit date from sync | S |
-| FR-PROJ-05 | 3D "exhibit" header (hero screenshot on a plinth) with an image fallback | C |
-| FR-PROJ-06 | "Additional projects" compact list for smaller work (Tourmate, Eduflow329, Surveillance Car) | M |
-| FR-PROJ-07 | Gallery lightbox with keyboard navigation and captions/credits | S |
+| FR-PROJ-01 | Index with filters (stack, type, status); featured first | M |
+| FR-PROJ-02 | "Museum wall label" card: title, years, *Medium:* stack, one line, status | M |
+| FR-PROJ-03 | Case-study page (Markdown body): overview, problem, role, architecture, features, challenges, results, gallery, links, stack, related posts/docs | M |
+| FR-PROJ-04 | Live GitHub stats for linked repos | S |
+| FR-PROJ-05 | 3D exhibit header | C |
+| FR-PROJ-06 | "Additional projects" compact list | M |
+| FR-PROJ-07 | Gallery lightbox with keyboard navigation and credits | S |
 
 ### 3.5 Experience (`FR-EXP`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-EXP-01 | Reverse-chronological timeline of entries of kind *work, internship, freelance, leadership, teaching, volunteer*, with a filter by kind | M |
-| FR-EXP-02 | Each entry shows role, organisation (+ link), dates ("Present" when open-ended), location, highlights, skills used and related links | M |
-| FR-EXP-03 | Entries can link to projects (e.g. *Programming Secretary* ↔ *NEUPC platform*) | S |
+| FR-EXP-01 | Reverse-chronological timeline (work, internship, freelance, leadership, teaching, volunteer), filterable | M |
+| FR-EXP-02 | Entry: role, organisation, dates ("Present"), location, highlights, skills, links | M |
+| FR-EXP-03 | Links between entries and projects | S |
 
-### 3.6 CP Journey (`FR-CP`)
-
-| ID | Requirement | Pri |
-|---|---|---|
-| FR-CP-01 | Overview: total problems solved (sum of synced counts, or a manual override such as "1000+"), and a per-judge profile card with handle, current/max rating and rank title (in Codeforces rank colours) | M |
-| FR-CP-02 | Rating history chart (Codeforces first; other judges when their adapter exists), with contest names in tooltips and an accessible data table | M |
-| FR-CP-03 | Activity heatmap of daily accepted submissions over the last 365 days | S |
-| FR-CP-04 | Onsite contests: name, date, venue/host, team name, teammates, rank / total teams, award, standings link, photos, optional write-up. Seeded with ICPC 2025 Asia Dhaka Regional (BUBT, 112th of 300+ teams, Mymensingh Divisional Champion) and the listed IUPCs | M |
-| FR-CP-05 | Solved-problem distribution by tag and by difficulty (from Codeforces submissions) | S |
-| FR-CP-06 | 3D "Colonnade": one column per month, height = accepted problems. Paired with an equivalent 2D chart/table | S |
-| FR-CP-07 | Milestones timeline (first contest, rating thresholds, ICPC) | C |
-| FR-CP-08 | Links to the CP roadmap in Docs and to NEUPC | S |
-| FR-CP-09 | Every synced number can be overridden manually in admin (for judges without an API) | M |
-
-### 3.7 Blog (`FR-BLOG`)
+### 3.6 CP Journey — owner's public page (`FR-CP`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-BLOG-01 | Index: title, date, reading time, excerpt, tags; tag filter; pagination (10/page) | M |
-| FR-BLOG-02 | Post page: title, subtitle, published and updated dates, reading time, auto table of contents (h2/h3), body, tags, series navigation, previous/next, related posts, share links | M |
-| FR-BLOG-03 | Markdown features: GFM (tables, task lists, strikethrough), footnotes (rendered as sidenotes on wide screens), syntax-highlighted code with filename, line highlighting and copy, KaTeX math, callouts, figures with caption and credit, YouTube facade embed, Codeforces/CSES problem card | M |
-| FR-BLOG-04 | Mermaid diagrams (rendered client-side, lazily, theme-aware) | S |
-| FR-BLOG-05 | Series (ordered multi-part posts) | S |
-| FR-BLOG-06 | Tag pages | M |
-| FR-BLOG-07 | RSS 2.0 / Atom feed (full content) and JSON Feed | M |
-| FR-BLOG-08 | Dynamic Open Graph image per post | S |
-| FR-BLOG-09 | Draft, scheduled and published states; secret preview link for drafts | M |
-| FR-BLOG-10 | Reading-progress bar | S |
-| FR-BLOG-11 | View counter | C |
-| FR-BLOG-12 | Comments via Giscus | C |
+| FR-CP-01 | Overview: combined distinct solves across **all public judge accounts** (or a manual override), plus a card per judge (handle, rating/max/rank where the judge has ratings, solved) for Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph, VJudge | M |
+| FR-CP-02 | Rating history chart per rated judge (Codeforces, AtCoder, LeetCode, CodeChef), with an accessible data table | M |
+| FR-CP-03 | Combined activity heatmap (365 days) | S |
+| FR-CP-04 | Onsite contests (ICPC 2025 Asia Dhaka Regional: BUBT, 112th of 300+, Mymensingh Divisional Champion; IUPCs) with team, rank, award, photos, optional write-up | M |
+| FR-CP-05 | Tag and difficulty distribution (where the judge provides them) | S |
+| FR-CP-06 | 3D "Colonnade" (monthly combined solves) with a 2D/table twin | S |
+| FR-CP-07 | Milestones timeline | C |
+| FR-CP-08 | Links to the CP roadmap and NEUPC | S |
+| FR-CP-09 | Any synced number can be overridden in admin | M |
 
-### 3.8 Roadmap Docs (`FR-DOCS`) — see [10](10-roadmap-docs-system.md) for the full design
+### 3.7 Blog — full HTML (`FR-BLOG`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-DOCS-01 | `/docs` catalog: every public roadmap with description, published/planned topic counts and last-updated date | M |
-| FR-DOCS-02 | `/docs/{roadmap}` map: phases → modules → topics as a vertical roadmap with status (published / coming soon), serials, "Topic N of M", in-roadmap search and filters. Each topic links to its page on the content origin | M |
-| FR-DOCS-03 | Topic pages are served **byte-for-byte as uploaded** on the content origin, preserving the folder tree so every relative link (`../index.html`, `assets/…`, `../../../phase-0/…`) resolves | M |
-| FR-DOCS-04 | For any roadmap root, phase or module without its own `index.html`, the platform generates one that matches the roadmap's look (theme CSS extracted from its topics) | M |
-| FR-DOCS-05 | Links to planned-but-unpublished topics resolve to a generated "coming soon" page (noindex), not a 404 | M |
-| FR-DOCS-06 | Reader progress: the per-page features built into bundles keep working; generated index pages summarise per-topic progress from the same browser storage | S |
-| FR-DOCS-07 | Topic sections appear in global search with deep links (`…/3_std_vector/#s4`) | S |
-| FR-DOCS-08 | Per-roadmap control over which folders are public (e.g. `data/` verbatim book excerpts can be private); private files return a friendly notice | M |
-| FR-DOCS-09 | Content-origin `sitemap.xml`, `robots.txt` and HTTP canonical headers | M |
-| FR-DOCS-10 | Admin: roadmap outline editor, single-topic zip upload, bulk tree import with dry-run diff, CLI push, version history, preview, publish, rollback, link report, file browser, quick-edit a file into a new version | M |
-| FR-DOCS-11 | Writing topics inside admin (Markdown → roadmap template) | W (v1.1) |
+| FR-BLOG-01 | Each post is a **full HTML document** (its own `<head>`, CSS, JavaScript and assets), rendered **exactly as written** on the content origin (`read…/blog/{slug}/`). Interactive demos, custom layouts and embedded scripts work, like roadmap topics ([10](10-roadmap-docs-system.md)) | M |
+| FR-BLOG-02 | Authoring path 1: **in-admin HTML editor**: file tree, CodeMirror for HTML/CSS/JS, drag-and-drop assets into the post bundle, live sandboxed preview (mobile/tablet/desktop widths), autosaved drafts, "Save version" | M |
+| FR-BLOG-03 | Authoring path 2: upload a zip bundle (`index.html` + assets) or push with the CLI | M |
+| FR-BLOG-04 | Start from a **template** (e.g. "Marble & Ink essay" with title, date, reading time, OG/canonical tags, footer licence) or a blank document | S |
+| FR-BLOG-05 | Listing metadata (title, excerpt, tags, series, cover, date, reading time, sections) is **extracted from the HTML** and can be overridden in admin | M |
+| FR-BLOG-06 | Main-site blog index (paginated), tag pages, series pages; `/blog/{slug}` on the main domain redirects (308) to the post | M |
+| FR-BLOG-07 | Versions: every save is a version; publish, schedule (future time), unpublish, roll back, compare | M |
+| FR-BLOG-08 | Secret, expiring preview links for drafts and unpublished versions | M |
+| FR-BLOG-09 | RSS/Atom/JSON feeds with title, summary and link (`Q-28`) | M |
+| FR-BLOG-10 | Dynamic OG image per post (used when the post has no `og:image`) | S |
+| FR-BLOG-11 | Post sections in global search, with deep links | S |
+| FR-BLOG-12 | Validation report on each version (broken links, missing alt/meta, external hosts blocked by CSP) | M |
+| FR-BLOG-13 | View counter via the reader runtime | C |
+| FR-BLOG-14 | Comments (Giscus inside the template) | C |
 
-### 3.9 Contact (`FR-CONTACT`)
+### 3.8 Roadmap Docs (`FR-DOCS`) — full design in [10](10-roadmap-docs-system.md)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-CONTACT-01 | Form: name, email, subject (optional), message (20–5000 chars), protected by Cloudflare Turnstile. Clear success and error states. Stored in DB; owner notified by email | M |
+| FR-DOCS-01 | `/docs` catalog of public roadmaps | M |
+| FR-DOCS-02 | `/docs/{roadmap}` map (phases → modules → topics, status, serials, search/filter); per-topic progress dots when signed in | M |
+| FR-DOCS-03 | Topic pages served from the content origin **exactly as authored** (stored bytes immutable), preserving the folder tree so relative links resolve. The only platform addition is the reader-runtime block in the HTML `<head>` | M |
+| FR-DOCS-04 | Generated root/phase/module index pages in the roadmap's style | M |
+| FR-DOCS-05 | Generated "coming soon" pages for planned topics (noindex) | M |
+| FR-DOCS-06 | Progress tracking **only for signed-in readers**: see FR-PROG | M |
+| FR-DOCS-07 | Topic sections in global search with deep links | S |
+| FR-DOCS-08 | Private folders per roadmap (default `data/`) | M |
+| FR-DOCS-09 | Content-origin sitemap, robots, canonical headers | M |
+| FR-DOCS-10 | Admin: outline editor, zip upload, bulk import with dry run, CLI, versions, preview, publish, rollback, link report, file browser | M |
+| FR-DOCS-11 | Create/edit topics in the in-admin HTML editor (same editor as the blog) | S |
+| FR-DOCS-12 | Practice problems in topics are matched to canonical judge problems for auto-verification (FR-CPT-06) | S |
+
+### 3.9 Reading progress (`FR-PROG`) — design in [19 §3–4](19-guest-accounts-and-progress.md)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-PROG-01 | **Anonymous readers can read everything but cannot track progress.** "Mark read" and "solved" controls are disabled, with the explanation "Sign in to track your progress"; nothing is saved (not even in the browser) | M |
+| FR-PROG-02 | Signed-in readers' section and practice ticks are saved to their account and synced across devices; the server is the source of truth | M |
+| FR-PROG-03 | A one-click "Sign in to track progress" chip on every topic returns the reader to the same page (and position) after sign-in | M |
+| FR-PROG-04 | Offline/failed writes are queued and retried; no progress is lost | M |
+| FR-PROG-05 | Generated roadmap index pages show the signed-in reader's per-topic progress and "Continue where you left off" | M |
+| FR-PROG-06 | Reading position (last section reached) is remembered per topic | S |
+| FR-PROG-07 | Practice problems solved on linked judges appear ticked and "verified" | S |
+| FR-PROG-08 | Reset progress for a topic or a whole roadmap | S |
+
+### 3.10 Guest accounts & reader panel (`FR-GUEST`) — design in [19](19-guest-accounts-and-progress.md)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-GUEST-01 | Anyone can create an account by signing in with Google or GitHub (`Q-26`); no password | M |
+| FR-GUEST-02 | `/me` dashboard: continue reading, roadmap progress cards, activity calendar/streak, CP summary, next recommended topic | M |
+| FR-GUEST-03 | `/me/roadmaps/[roadmap]`: per-topic progress tree | M |
+| FR-GUEST-04 | `/me/settings`: display name/avatar, linked providers, sign out everywhere | M |
+| FR-GUEST-05 | Export my data (JSON) and delete my account (hard delete ≤ 30 days) | M |
+| FR-GUEST-06 | Guests can never access admin pages or other users' data | M |
+| FR-GUEST-07 | Public learner profiles / leaderboards | W (v2) |
+
+### 3.11 CP tracking for guests (`FR-CPT`) — design in [20](20-cp-multi-platform-tracking.md)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-CPT-01 | Link handles on Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph and VJudge; handle format and existence checked on add | M |
+| FR-CPT-02 | Automatic sync (on link, daily while active, "Sync now" with cooldown) with per-account status: synced, syncing, needs extension, failing | M |
+| FR-CPT-03 | `/me/cp`: combined distinct solves, per-judge cards, rating charts, combined heatmap, solved list with filters | M |
+| FR-CPT-04 | Browser-extension ingestion for judges without public solved lists (LeetCode, CSES, LightOJ, SPOJ, CodeChef), compatible with the owner's NEUPC extension (`Q-30`) | S |
+| FR-CPT-05 | Personal extension token (create/revoke) on `/me/extension` | S |
+| FR-CPT-06 | Roadmap practice problems auto-verified from the guest's solves | S |
+| FR-CPT-07 | Tag/difficulty distribution where available | C |
+| FR-CPT-08 | Handle ownership verification | C |
+
+### 3.12 Contact (`FR-CONTACT`)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-CONTACT-01 | Form with Turnstile, stored + owner notified | M |
 | FR-CONTACT-02 | Direct links: email, LinkedIn, GitHub, Codeforces | M |
-| FR-CONTACT-03 | Phone number is **hidden by default** (privacy); an admin toggle can show it | M |
+| FR-CONTACT-03 | Phone hidden by default | M |
 
-### 3.10 Resume (`FR-RES`)
-
-| ID | Requirement | Pri |
-|---|---|---|
-| FR-RES-01 | `/resume` serves the current CV PDF inline, with a download action named `Eyasir_Ahamed_CV.pdf` | M |
-| FR-RES-02 | Admin keeps a version history of CV PDFs and can switch which one is current | M |
-| FR-RES-03 | "Last updated" date is shown next to the download buttons | S |
-| FR-RES-04 | The LaTeX source (`.tex`) can be stored alongside each PDF version (private) | C |
-
-### 3.11 Authentication (`FR-AUTH`) — see [08](08-auth-and-security.md)
+### 3.13 Resume (`FR-RES`)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-AUTH-01 | Admin sign-in is **Google only**, at `/admin/login` (not linked in public navigation) | M |
-| FR-AUTH-02 | Only allowlisted emails can create an account. Anyone else sees "Not authorised" and **no user record is created** | M |
-| FR-AUTH-03 | Roles: `owner` (everything) and `editor` (content only; no users, tokens or security settings) | M |
-| FR-AUTH-04 | Sign out; sessions refresh silently; an expired session redirects to login and returns to the original page | M |
-| FR-AUTH-05 | Owner manages the allowlist (add/remove email, change role) | M |
+| FR-RES-01 | `/resume` serves the current CV PDF (inline + download as `Eyasir_Ahamed_CV.pdf`) | M |
+| FR-RES-02 | Version history; switch the current CV | M |
+| FR-RES-03 | "Last updated" date shown | S |
+| FR-RES-04 | Store the LaTeX source privately with each version | C |
 
-### 3.12 Admin (`FR-ADM`) — see [09](09-admin-panel.md)
-
-| ID | Requirement | Pri |
-|---|---|---|
-| FR-ADM-01 | Dashboard: content counts, drafts, unread messages, sync health, recent activity, KB import jobs | M |
-| FR-ADM-02 | Create/read/update/delete (CRUD) for every content type, with validation, draft/publish and "unsaved changes" guard | M |
-| FR-ADM-03 | Drag-and-drop ordering wherever order is visible publicly | M |
-| FR-ADM-04 | Media library: upload, alt text (required), caption, credit, licence, source URL, usage references, delete-protection when in use | M |
-| FR-ADM-05 | Markdown editor with live preview that uses the **same renderer** as the public site; autosave and revision history for posts | M |
-| FR-ADM-06 | Secret, expiring preview links for any draft (post, project, KB version) | M |
-| FR-ADM-07 | Docs management (see FR-DOCS-10) | M |
-| FR-ADM-08 | Sync centre: status per integration, last run, "Run now", run logs, stale-data warnings | M |
-| FR-ADM-09 | Messages inbox: read/unread, archive, spam, reply via `mailto:` | M |
-| FR-ADM-10 | Settings: profile, social links, SEO defaults, home sections, availability, navigation toggles, maintenance mode | M |
-| FR-ADM-11 | Audit log of every admin write (who, what, when, diff) | S |
-| FR-ADM-12 | Personal API tokens (scoped, expiring) for the KB CLI | S |
-| FR-ADM-13 | Redirect manager; redirects are created automatically when a slug changes | S |
-| FR-ADM-14 | Content health: missing alt text, broken links, stale syncs, unpublished references | C |
-| FR-ADM-15 | Admin command palette (jump to any record) | C |
-
-### 3.13 SEO & sharing (`FR-SEO`)
+### 3.14 Authentication & roles (`FR-AUTH`) — see [08](08-auth-and-security.md)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-SEO-01 | Every page: unique title, meta description, canonical URL, Open Graph and Twitter tags, with admin overrides | M |
-| FR-SEO-02 | JSON-LD: `Person` + `WebSite` (home), `BlogPosting` (posts), `CreativeWork`/`SoftwareSourceCode` (projects), `BreadcrumbList` (deep pages), `Course`/`LearningResource` (roadmap pages generated by the platform only; uploaded topics are never modified) | M |
-| FR-SEO-03 | `sitemap.xml` and `robots.txt` per host; RSS autodiscovery link | M |
-| FR-SEO-04 | Dynamic OG images for posts, projects and roadmap pages in the site's typographic style | S |
+| FR-AUTH-01 | One sign-in page (`/login`) with Google and GitHub; `/admin/login` is an alias that returns to `/admin` | M |
+| FR-AUTH-02 | **Admin rights only for allowlisted emails** (`admin_users`); everyone else is a guest | M |
+| FR-AUTH-03 | Roles: `owner`, `editor`, `guest` | M |
+| FR-AUTH-04 | Sign out everywhere (main site + content origin); silent session refresh; return to the original page after sign-in | M |
+| FR-AUTH-05 | Owner manages the admin allowlist | M |
+| FR-AUTH-06 | Admin can ban/unban a user; sign-ups from disposable-email domains are rejected | M |
 
-### 3.14 Sync (`FR-SYNC`) — see [12](12-integrations-and-sync.md)
+### 3.15 Admin (`FR-ADM`) — see [09](09-admin-panel.md)
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-SYNC-01 | Daily GitHub sync: profile counts, repos (stars, forks, languages, pushed_at), contribution calendar, pinned repos | M |
-| FR-SYNC-02 | Daily Codeforces sync: user info, rating history, submissions (→ solved set, daily activity, tags) | M |
-| FR-SYNC-03 | Pluggable adapters for AtCoder, LeetCode, CodeChef and others; manual values until then | C |
-| FR-SYNC-04 | "Run now" per integration; each run is logged with status, counts, duration and error | M |
-| FR-SYNC-05 | Failure never breaks public pages (the last good snapshot is served); 3 consecutive failures email the owner | M |
+| FR-ADM-01 | Dashboard: content, drafts, messages, sync health, import jobs, reader counts | M |
+| FR-ADM-02 | CRUD for every content type with validation, draft/publish, unsaved-changes guard | M |
+| FR-ADM-03 | Drag-and-drop ordering | M |
+| FR-ADM-04 | Media library (alt text required, credits, licence) | M |
+| FR-ADM-05 | Markdown editor with live preview for site-rendered text (bio, case studies, contest write-ups, privacy page) | M |
+| FR-ADM-06 | Signed, expiring previews for drafts and bundle versions | M |
+| FR-ADM-07 | Bundle management for roadmaps and posts (FR-DOCS-10, FR-BLOG-02/03/07) | M |
+| FR-ADM-08 | Sync centre: owner accounts, platform health per judge, queue depth, per-platform enable/disable, run logs | M |
+| FR-ADM-09 | Messages inbox | M |
+| FR-ADM-10 | Settings (profile, social links, SEO, home sections, flags, maintenance) | M |
+| FR-ADM-11 | Audit log | S |
+| FR-ADM-12 | API tokens for the bundle CLI (owner) | S |
+| FR-ADM-13 | Redirect manager | S |
+| FR-ADM-14 | Content health checks | C |
+| FR-ADM-15 | Admin command palette | C |
+| FR-ADM-16 | Users screen: all accounts, roles, last seen, ban/unban, delete (owner) | M |
+| FR-ADM-17 | Reader analytics in aggregate (registered/active readers, completion funnels, drop-off sections) | S |
+| FR-ADM-18 | HTML templates library for the editor | S |
+
+### 3.16 SEO & sharing (`FR-SEO`)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-SEO-01 | Unique title, description, canonical, OG/Twitter tags on every main-site page | M |
+| FR-SEO-02 | JSON-LD: `Person`, `WebSite`, `CreativeWork`/`SoftwareSourceCode`, `BreadcrumbList`; `Course`/`ItemList` on generated roadmap pages. Posts and topics carry their own meta as authored (templates include `BlogPosting`) | M |
+| FR-SEO-03 | Sitemaps and robots per host; RSS autodiscovery | M |
+| FR-SEO-04 | Dynamic OG images | S |
+
+### 3.17 Sync (`FR-SYNC`) — see [12](12-integrations-and-sync.md), [20](20-cp-multi-platform-tracking.md)
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FR-SYNC-01 | Daily GitHub sync for the owner | M |
+| FR-SYNC-02 | Judge adapters for all 10 judges, API-first, with scraping only where no API exists (flag per platform) and the extension where neither works | M |
+| FR-SYNC-03 | Database-backed sync queue with per-platform rate budgets, serving owner and guest accounts | M |
+| FR-SYNC-04 | Every run logged; "Run now"; stale warnings | M |
+| FR-SYNC-05 | Failures never break public pages (last good snapshot); the owner is emailed after 3 consecutive failures of an owner account or a platform-wide outage | M |
+| FR-SYNC-06 | CLIST.by fallback for contest results where direct sources fail (`Q-31`) | C |
 
 ---
 
 ## 4. Key user stories and acceptance criteria
 
-> Format: *As a … I want … so that …* then Given / When / Then. Full backlog: [16 §4](16-delivery-plan.md).
+**US-001 — Admin signs in; non-admins become guests** (FR-AUTH-01/02)
+- **Given** `eyasir329@gmail.com` is an active `owner` in `admin_users` **when** they sign in with Google **then** they can open `/admin` and the role is shown.
+- **Given** any other Google/GitHub account **when** it signs in **then** a **guest** account is created and it lands on `/me`; opening `/admin` returns 403 with no admin data.
+- **Given** an email on a disposable-domain blocklist **when** it signs up **then** sign-up is refused.
 
-**US-001 — Allowlisted admin signs in with Google** (FR-AUTH-01/02)
-- *As the owner I want to sign in with my Google account so that I can manage the site.*
-- **Given** `eyasir329@gmail.com` is in `admin_users` with role `owner` **when** I choose "Continue with Google" on `/admin/login` and consent **then** I land on `/admin` and my role is shown in the user menu.
-- **Given** any Google account that is **not** allowlisted **when** it completes Google consent **then** Supabase rejects the sign-up (no row in `auth.users`), and the page shows "This account is not authorised" with no admin data exposed.
-- **Given** I'm signed out **when** I open `/admin/projects` directly **then** I'm redirected to `/admin/login?next=/admin/projects` and returned there after sign-in.
+**US-010 — Edit a project without deploying** (FR-ADM-02): unchanged: saved edits appear on the public page within ~5 s; slug changes create redirects.
 
-**US-010 — Edit a project and see it live without deploying** (FR-ADM-02, G-04)
-- **Given** a published project **when** I change its summary and click *Save* **then** the admin shows "Saved", an audit-log entry is written, and the public `/projects/{slug}` shows the new text on the next request (target ≤ 5 s).
-- **Given** I change the slug **when** I save **then** a 308 redirect from the old URL to the new one is created automatically.
+**US-020 — Recruiter downloads the CV** (FR-RES-01): unchanged.
 
-**US-020 — Recruiter downloads the CV** (FR-RES-01)
-- **Given** a current CV version exists **when** a visitor clicks *Download CV* anywhere **then** the browser downloads `Eyasir_Ahamed_CV.pdf` with `Content-Disposition: attachment`, and a `resume_download` analytics event is recorded (no personal data).
-- **Given** no CV has been uploaded **then** every CV button is hidden, never broken.
-
-**US-030 — CP stats refresh daily** (FR-SYNC-02, FR-CP-01)
-- **Given** Codeforces handle `eyasir329` is enabled for sync **when** the daily job runs **then** current/max rating, rating history and solved set are upserted, the run is logged as `succeeded`, and the CP page shows the new values after revalidation.
-- **Given** the Codeforces API is down **when** the job runs **then** the run is logged `failed` with the error, public pages keep the previous snapshot, and after 3 consecutive failures the owner receives one email.
+**US-030 — Owner CP stats refresh daily across judges** (FR-CP-01, FR-SYNC-02/03)
+- **Given** the owner's public accounts on the 10 judges **when** the daily run completes **then** each account shows fresh rating/solved data (or "needs extension" where the judge has no public solved list), combined solves are recomputed, and the CP page updates. A failing judge keeps its last snapshot.
 
 **US-040 — Publish the `std::vector` topic** (FR-DOCS-03/10)
-- **Given** roadmap `cp` exists **when** I upload `3_std_vector.zip` into node `phase-1/1_basics` **then** the validation report shows: 45 files, title "std::vector", serial `01.01.14`, 13 sections, 11 simulations, 11 practice problems, 5 videos, 0 errors, and warnings for links to topics not yet published.
-- **When** I click *Preview* **then** a signed preview URL on the content origin renders the page exactly as the local file, including quizzes, "mark read" checkboxes, theme toggle and video facades.
-- **When** I click *Publish* **then** `https://kb.{domain}/cp/phase-1/1_basics/3_std_vector/` serves the new version within 60 s, and the served `index.html` is byte-identical (same SHA-256) to the uploaded file.
+- **Given** roadmap `cp` **when** I upload `3_std_vector.zip` to `phase-1/1_basics` **then** the report shows 45 files, title "std::vector", serial `01.01.14`, 13 sections, 11 simulations, 11 practice problems (11 canonical keys), 5 videos, 0 errors.
+- **When** I publish **then** `https://read.eyasir329.dev/docs/cp/phase-1/1_basics/3_std_vector/` serves it within 60 s; with the runtime block removed, the served `index.html` is byte-identical to the uploaded file, and every other file is byte-identical.
 
-**US-041 — Roll back a topic** (FR-DOCS-10)
-- **Given** version 3 is published and version 2 exists **when** I choose *Roll back to v2* **then** v2 is served within 60 s, v3 remains in history, and the action is audit-logged.
+**US-041 — Roll back a topic or post** (FR-DOCS-10, FR-BLOG-07): the previous version is served ≤ 60 s later; audit-logged.
 
-**US-042 — Links to unpublished topics don't 404** (FR-DOCS-05)
-- **Given** `2_lambdas_and_comparators` is in the outline but unpublished **when** a reader clicks "← Lambdas & Comparators" on the `std::vector` page **then** they see a generated "Coming soon" page in the roadmap's style, with the topic title, its position in the roadmap and a link back to the module. The response carries `X-Robots-Tag: noindex`.
+**US-042 — Links to unpublished topics don't 404** (FR-DOCS-05): a generated "coming soon" page, `noindex`.
 
-**US-043 — Bulk import a whole phase** (FR-DOCS-10)
-- **Given** a zip containing `phase-1/…` with 20 topic folders **when** I run a dry-run import **then** I see a diff (new / changed / unchanged / would-archive) with per-topic validation before anything is written; **when** I confirm, all valid topics become `ready` (not yet published) and I can publish them in one action.
+**US-043 — Bulk import a phase** (FR-DOCS-10): dry-run diff first; apply creates `ready` versions; one-click publish.
 
-**US-050 — Visitor sends a message** (FR-CONTACT-01)
-- **Given** valid inputs and a passed Turnstile check **when** the visitor submits **then** the message is stored, the owner is emailed, and the visitor sees a confirmation. More than 5 submissions per hour from one IP are rejected with a friendly message.
+**US-050 — Visitor sends a message** (FR-CONTACT-01): unchanged.
 
-**US-060 — Visitor turns 3D off** (FR-GEN-08)
-- **Given** the site uses 3D **when** the visitor toggles 3D off (or has `prefers-reduced-motion: reduce`) **then** every scene is replaced by its static poster, no WebGL context is created, and the preference persists across visits.
+**US-060 — Visitor turns 3D off** (FR-GEN-08): unchanged.
 
-**US-070 — Reader continues a roadmap** (FR-DOCS-06, J-3)
-- **Given** a reader ticked "mark read" on sections of several topics **when** they open the roadmap's generated module index on the content origin **then** each topic shows its progress (e.g. "8/13 read"), and the next unread topic is highlighted.
+**US-070 — Signed-in reader continues a roadmap** (FR-PROG-05)
+- **Given** a signed-in reader with ticks on several topics **when** they open the generated module index **then** each topic shows "8/13 read · 3/11 solved", and the next unread topic is highlighted.
+
+**US-080 — Anonymous reader is read-only** (FR-PROG-01)
+- **Given** a visitor who is not signed in **when** they open a topic **then** all content, quizzes, demos and videos work, but every "mark read" and "solved" control is disabled with the text "Sign in to track your progress", and no progress key is written to `localStorage`.
+
+**US-081 — Sign in from a topic and keep reading** (FR-PROG-03)
+- **Given** an anonymous reader on section 4 of a topic **when** they click "Sign in to track progress" and complete Google sign-in **then** they return to the same topic (≤ 3 redirects), the controls are enabled, and the chip shows their avatar.
+
+**US-082 — Progress follows the reader across devices** (FR-PROG-02/04)
+- **Given** a guest ticks sections 1–5 on a phone **when** they open the same topic on a laptop **then** sections 1–5 are ticked (server state wins). Ticks made offline are uploaded on the next visit.
+
+**US-083 — Guest links judges and practice is auto-verified** (FR-CPT-01/02, FR-CPT-06)
+- **Given** a guest links VJudge and Codeforces handles **when** the first sync finishes **then** `/me/cp` shows combined solves without double-counting problems solved on both, and on the `std::vector` topic every practice problem they've solved appears ticked with "verified via VJudge/Codeforces".
+
+**US-084 — Extension fills judges without APIs** (FR-CPT-04/05)
+- **Given** a guest created an extension token **when** the extension sends their accepted CSES submissions **then** those solves appear under CSES (source: extension) and matching roadmap practice items become verified. Submissions for a handle the guest hasn't linked are rejected.
+
+**US-085 — Export and delete** (FR-GUEST-05)
+- **When** a guest exports **then** they download a JSON file with profile, progress, handles and solves. **When** they delete their account **then** they're signed out everywhere immediately and all their rows are gone within 30 days.
+
+**US-090 — Owner writes an HTML post in admin** (FR-BLOG-01/02/04)
+- **Given** the "Marble & Ink essay" template **when** I create a post, write HTML with an interactive `<canvas>` demo, drop two images into `assets/` and click *Save version* **then** the preview renders it exactly (scripts run inside the sandbox), the validation report is clean, and metadata (title, description, reading time, sections) is extracted.
+
+**US-091 — Schedule a post** (FR-BLOG-07)
+- **Given** a ready version **when** I schedule it for tomorrow 09:00 (Asia/Dhaka) **then** it becomes visible at `read…/blog/{slug}/` within 5 minutes of that time, appears on `/blog` and in the feeds, and `eyasir329.dev/blog/{slug}` redirects to it.
 
 ---
 
-## 5. Out-of-scope features (explicit "Won't" for v1)
+## 5. Out of scope for v1
 
-Visitor accounts · synced reader progress across devices · comments (Could in v1.1) · newsletter ·
-Bengali localisation · in-admin topic authoring · paid content · multi-author workflow. Rationale:
-[00 §4.2](00-project-charter.md).
+Comments (Could, via template) · newsletter · Bengali localisation · public learner profiles and
+leaderboards · reader notes/bookmarks · paid content · multi-author workflow · generating the CV from
+the database. Rationale: [00 §4.2](00-project-charter.md).
 
 ## 6. Traceability
 
-Each `FR-*` maps to one or more stories in the backlog ([16 §4](16-delivery-plan.md)), to a design
-section (IA, DB, API docs) and to at least one check in [15](15-testing-and-qa.md). The audit
-checklist ([19](19-audit-checklist.md)) asks the owner to confirm the priority of every **S** and
-**C** item.
+Each `FR-*` maps to backlog stories ([16 §4](16-delivery-plan.md)), a design section and at least one
+check in [15](15-testing-and-qa.md). The audit checklist ([21](21-audit-checklist.md)) asks the owner
+to confirm every **S**/**C** priority.

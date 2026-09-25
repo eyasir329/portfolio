@@ -1,128 +1,142 @@
 # 00 — Project Charter
 
-> Status: **Draft v0.1** · Owner: Eyasir Ahamed · Related: [01 PRD](01-product-requirements.md), [16 Delivery plan](16-delivery-plan.md), [17 Risks](17-risks-and-decisions.md)
+> Status: **Draft v0.2** · Owner: Eyasir Ahamed · Related: [01 PRD](01-product-requirements.md), [16 Delivery plan](16-delivery-plan.md), [17 Risks](17-risks-and-decisions.md), [CHANGELOG](CHANGELOG.md)
 
 ---
 
 ## 1. Vision
 
 > **One home for everything Eyasir builds, solves and teaches. It should read like a well-made book,
-> feel like walking through a quiet gallery, and stay current without redeploying.**
+> feel like walking through a quiet gallery, stay current without redeploying, and give learners a
+> place to track their own journey.**
 
-The site should make three things obvious within seconds:
+The site should make four things obvious:
 
 1. **Builder.** Production-grade full-stack work (NEUPC, Joborx, …) with honest case studies.
-2. **Problem solver.** A measurable competitive-programming record (1000+ problems, ICPC 2025 Asia
-   Dhaka Regional: 112th overall, Mymensingh Divisional Champion).
-3. **Teacher.** Public roadmap documentation that other programmers can learn from, in the same
-   rigorous format as the `3_std_vector` reference topic.
+2. **Problem solver.** A measurable competitive-programming record across 10 judges
+   (1000+ problems, ICPC 2025 Asia Dhaka Regional: 112th overall, Mymensingh Divisional Champion).
+3. **Teacher.** Public roadmap documentation and HTML-crafted blog posts, in the rigorous format of
+   the `3_std_vector` reference topic.
+4. **Companion for learners.** Readers who sign in can track their roadmap progress and their CP
+   progress across judges in one private panel.
 
 ## 2. Problem statement
 
 | Today | Consequence |
 |---|---|
 | Credentials are spread across a PDF CV, GitHub, Codeforces, LinkedIn, NEUPC and Discord | A recruiter has to open 4–6 tabs, and most won't |
-| Stats in the CV (rating, problem counts) go stale as soon as it's printed | Numbers under-sell current ability |
-| The roadmap topics (e.g. `std::vector`) exist as local HTML bundles | No public home, no navigation between topics, nobody can find them |
-| There's no place for long-form technical writing | No way to show depth of thinking beyond bullet points |
-| Any static site needs a code change and a redeploy for each edit | Content rots because updating it has friction |
+| CV stats go stale as soon as it's printed | Numbers under-sell current ability |
+| Roadmap topics exist only as local HTML bundles | No public home, no navigation, no discoverability |
+| Writing that needs interactivity (demos, measured charts) doesn't fit a Markdown blog | Posts would lose what makes the topic pages good |
+| Learners (club members, juniors) have no way to keep their progress through the roadmap across devices, or to see their CP progress on several judges in one place | Motivation and continuity suffer; everyone keeps spreadsheets |
+| A static site needs a code change and a redeploy for each edit | Content rots because updating it has friction |
 
 ## 3. Goals and success metrics
 
 | ID | Goal | KPI (measured how) | Target (6 months post-launch) |
 |---|---|---|---|
-| `G-01` | **Recruiter clarity.** Role, stack, best work and CV reachable fast | Clicks from landing to CV download or first project (analytics funnels) | ≤ 2 clicks; median ≤ 30 s |
-| `G-02` | **Credibility through live data** | Age of newest successful sync (admin dashboard) | Stats never older than 48 h |
-| `G-03` | **Knowledge sharing** via Roadmap Docs | Published topics; monthly KB visitors; share of sessions that reach the last section | ≥ 1 roadmap live at launch; steady growth after |
-| `G-04` | **Zero-code maintenance** | Content changes that needed a code deploy | 0 (every public text, image, number and link is editable in admin) |
-| `G-05` | **Distinctive but fast** classical-minimal design with real 3D | Lighthouse (mobile) and field Core Web Vitals | Content pages Perf ≥ 95, 3D pages ≥ 90; LCP p75 ≤ 2.0 s (content) / 2.5 s (3D) |
-| `G-06` | **Low running cost** | Monthly bill | $0 at launch on free tiers; upgrade only on a documented trigger (see [14 §9](14-devops-and-environments.md)) |
-| `G-07` | **Accessible to everyone** | axe violations; manual keyboard/screen-reader pass | 0 serious/critical violations; WCAG 2.2 AA |
+| `G-01` | **Recruiter clarity** | Clicks from landing to CV download or first project | ≤ 2 clicks; median ≤ 30 s |
+| `G-02` | **Credibility through live data** | Age of newest successful sync per owner account | ≤ 48 h (API judges); "needs extension" judges shown honestly |
+| `G-03` | **Knowledge sharing** | Published topics and posts; monthly readers on the content origin | ≥ 1 roadmap + ≥ 1 post at launch; steady growth |
+| `G-04` | **Zero-code maintenance** | Content changes that needed a code deploy | 0 |
+| `G-05` | **Distinctive but fast** | Lighthouse (mobile) and field Core Web Vitals | Content pages Perf ≥ 95, 3D pages ≥ 90; LCP p75 ≤ 2.0 s / 2.5 s |
+| `G-06` | **Low running cost** | Monthly bill | $0 at launch; documented upgrade triggers ([14 §9](14-devops-and-environments.md)) |
+| `G-07` | **Accessible to everyone** | axe violations; manual audit | 0 serious/critical; WCAG 2.2 AA |
+| `G-08` | **Learner engagement** | Registered readers; weekly active readers; topics completed; readers with ≥ 1 linked judge | Trend upwards month over month; ≥ 25% of registered readers link a judge |
+| `G-09` | **Trustworthy with personal data** | Privacy incidents; export/delete requests fulfilled on time | 0 incidents; 100% within 30 days |
 
 ## 4. Scope
 
 ### 4.1 In scope (v1 launch)
 
-- Public portfolio: Home, About, Projects (+ case studies), Experience, CP Journey, Blog, Docs catalog
-  and roadmap views, Contact, Resume download.
-- Roadmap Docs **content origin** that serves uploaded HTML topic bundles unmodified, with generated
-  index and "coming soon" pages, versioning, preview, publish and rollback.
-- Classical-minimal design system, light/dark themes, and four Three.js scenes (hero, CP colonnade,
-  project exhibit, 404), all with non-3D fallbacks.
-- Supabase: Postgres schema with RLS, Google OAuth, Storage buckets, scheduled jobs.
-- Admin panel behind Google login, restricted to allowlisted emails: CRUD for all content, media
-  library, Markdown editor with live preview, bundle importer (single and bulk) plus CLI, sync
-  centre, messages inbox, settings, audit log.
-- Daily sync from GitHub and Codeforces. Adapters are built so other judges can be added later.
-- SEO (metadata, JSON-LD, sitemaps, RSS, dynamic OG images), privacy-friendly analytics, error
-  monitoring, backups.
+- Public portfolio: Home, About, Projects, Experience, CP Journey (10 judges synced), Contact, Resume.
+- **Content origin** (`read.eyasir329.dev`) serving **HTML bundles**: roadmap topics under
+  `/docs/…` and **blog posts under `/blog/…`**, rendered exactly as authored. It also serves
+  generated roadmap pages and hosts the reader runtime.
+- **HTML blog:** posts authored as full HTML (in-admin HTML editor with templates and live
+  preview, or zip/CLI upload), versioned and schedulable; main-site index, tags, series and feeds.
+- **Guest accounts** (Google/GitHub sign-in) and a **reader panel** (`/me`). **Roadmap progress is
+  saved only for signed-in readers**; anonymous readers can read everything but not track progress.
+- **CP tracking for guests** on Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES,
+  Toph and VJudge (API first; browser extension where judges don't expose solved lists), with
+  auto-verification of roadmap practice problems.
+- Classical-minimal design system, light/dark themes, Three.js scenes with fallbacks.
+- Supabase (Postgres + RLS, Auth, Storage, cron), admin panel for everything (including users and
+  reader analytics), SEO, analytics, monitoring and backups.
 
-### 4.2 Out of scope for v1 (Won't; candidates for later)
+### 4.2 Out of scope for v1
 
 | Item | Why not now | Revisit |
 |---|---|---|
-| Visitor accounts (sign-in for readers, synced KB progress) | Adds a whole auth surface. The KB already tracks progress in the browser | v2 |
-| Comments on posts | Moderation load; Giscus (GitHub Discussions) is a cheap later option | v1.1 (Could) |
-| Newsletter | Needs a list, double opt-in and compliance work | v2 |
-| Bengali (বাংলা) localisation | Doubles content effort | v2 |
-| Writing KB topics inside admin (Markdown → KB template) | v1 imports bundles made by the existing generator | v1.1 |
-| Multi-author blog, e-commerce, paid content, mobile app | Not a goal | — |
-| Generating the PDF CV from the database | The LaTeX CV stays the source of truth for print | v2 (Could) |
+| Public learner profiles, leaderboards | Would need handle verification and moderation | v2 |
+| Reader notes/bookmarks | Nice, but not requested | v2 |
+| Comments | Moderation load; Giscus can be added inside the post template later | v1.1 (Could) |
+| Newsletter | Double opt-in and compliance work | v2 |
+| Bengali localisation | Doubles content effort | v2 |
+| Email/password or magic-link sign-in | Google + GitHub cover the audience | v1.1 (Could) |
+| Multi-author blog, paid content, mobile app | Not a goal | — |
+| Building a new browser extension from scratch | Reuse or fork the NEUPC extension ([20 §9](20-cp-multi-platform-tracking.md)) | — |
 
 ## 5. Stakeholders and audiences
 
 | Who | Role | Interest |
 |---|---|---|
-| **Eyasir Ahamed** | Product owner, developer, sole admin (`owner` role) | Approves scope; maintains content |
-| Recruiters and hiring managers | Primary audience (`P-01`) | Fast proof of fit: stack, projects, CV |
+| **Eyasir Ahamed** | Product owner, developer, sole admin (`owner`) | Approves scope; maintains content |
+| Recruiters and hiring managers | Primary audience (`P-01`) | Fast proof of fit |
 | Senior engineers and interviewers | Primary audience (`P-02`) | Depth: architecture, code, writing |
-| CP learners (NEUPC members, juniors, peers) | Primary audience for Docs (`P-03`) | Structured roadmap, readable on phone |
+| CP learners (NEUPC members, juniors, peers) | Primary audience for Docs; **registered guests** (`P-03`, `P-06`) | Structured roadmap, saved progress, multi-judge tracking |
 | Contest organisers and collaborators | Secondary (`P-05`) | Contact, credibility |
-| Optional future editor | `editor` role | Help keep content fresh (cannot manage admins) |
+| Optional future editor | `editor` role | Content help |
 
-## 6. Constraints (fixed by the owner)
+## 6. Constraints
 
 | # | Constraint |
 |---|---|
-| C-1 | Frontend: **Next.js**. 3D: **Three.js**. Plus other modern tooling as needed |
-| C-2 | Database: **Supabase** (Postgres). Auth and Storage also on Supabase |
-| C-3 | Admin sign-in: **Google login** |
-| C-4 | Design: **unique, classical, minimalistic**, with **proper 3D** |
-| C-5 | Docs must render **full HTML topic pages** in the format of the `3_std_vector` reference bundle, organised as a public roadmap |
-| C-6 | Solo maintainer, near-zero budget at launch |
-| C-7 | Planning is audited by hand **before** any code is written or run |
+| C-1 | Next.js + Three.js + modern tooling |
+| C-2 | Supabase as the database (also Auth and Storage) |
+| C-3 | Google login (admin); guests use the same sign-in system |
+| C-4 | Unique, classical, minimal design with proper 3D |
+| C-5 | Docs render **full HTML** topic pages in the reference format, organised as a public roadmap |
+| C-6 | **Blog posts are written in HTML and rendered in full** |
+| C-7 | **Progress tracking only for signed-in readers**; anonymous = read-only |
+| C-8 | CP progress on the 10 listed judges |
+| C-9 | Solo maintainer, near-zero budget at launch |
+| C-10 | Planning is audited by hand before any code is written or run |
 
 ## 7. Assumptions
 
 | ID | Assumption | If false |
 |---|---|---|
-| `A-01` | The owner will buy (or already has) a custom domain | Use `*.vercel.app` aliases; the KB isolation still works because `vercel.app` is on the Public Suffix List (see [08 §6](08-auth-and-security.md)) |
-| `A-02` | Topic bundles keep the reference structure (`index.html` + `assets/` + optional `data/`) | Extend the metadata extractor; an optional `kb.json` manifest removes the guesswork ([10 §5](10-roadmap-docs-system.md)) |
-| `A-03` | Traffic is modest (< 50k page views/month in year 1) | Upgrade triggers in [14 §9](14-devops-and-environments.md) |
-| `A-04` | One primary admin; at most one additional editor | RLS and roles already support more |
-| `A-05` | Codeforces is the primary rated judge; others are shown from manual entries until an adapter exists | — |
-| `A-06` | The owner supplies missing content: photos, screenshots, dates, contest details ([18](18-content-inventory.md)) | Launch with placeholders hidden behind "show only if filled" rules |
+| `A-01` | A custom domain will be bought | `*.vercel.app` aliases still isolate origins |
+| `A-02` | Topic bundles keep the reference structure | Extraction fallbacks + optional `kb.json` |
+| `A-03` | Traffic < 50k page views/month in year 1 | Upgrade triggers |
+| `A-04` | One primary admin | Roles support more |
+| `A-05` | **Year-1 registered readers < 2,000, of whom < 500 active monthly** | The sync queue and database sizing are reviewed ([20 §10](20-cp-multi-platform-tracking.md)) |
+| `A-06` | The owner supplies missing content | Sections hide when empty |
+| `A-07` | **Judges keep today's public endpoints** (as used by NEUPC in July 2026); scraping-based ones may break | Adapters degrade to "needs extension"; per-platform flags |
+| `A-08` | **The NEUPC extension can be pointed at this site** (configurable API URL + compatible endpoints) | Fork a slim extension from the NEUPC code |
 
 ## 8. External dependencies
 
-Google Cloud OAuth client · Supabase projects (staging + production) · Vercel project · Domain and DNS ·
-GitHub fine-grained token (read-only) · Cloudflare Turnstile keys · Resend (transactional email) ·
-Sentry (errors). All are free tier at launch. Setup steps are in [14](14-devops-and-environments.md).
+Google Cloud OAuth client · **GitHub OAuth app** (guest sign-in) · Supabase projects (staging +
+production) · Vercel · domain/DNS · GitHub token (owner stats) · Cloudflare Turnstile · Resend ·
+Sentry · judge endpoints ([20 §2](20-cp-multi-platform-tracking.md)) · optional CLIST.by API key.
 
 ## 9. High-level milestones
 
 | Milestone | Content | Exit criterion |
 |---|---|---|
-| **M0 Plan approved** | This document set | Every doc signed off in [19](19-audit-checklist.md); open questions answered |
-| **M1 Foundations** | Scaffold, CI, Supabase, auth, design tokens, admin shell | Admin can sign in on preview; unauthorised Google accounts are refused |
+| **M0 Plan approved** | This document set (rev 0.2) | Signed off in [21](21-audit-checklist.md) |
+| **M1 Foundations** | Scaffold, CI, Supabase, auth with roles (owner/editor/guest), tokens, shells | Admin reaches `/admin`; a non-allowlisted account becomes a guest and gets 403 on `/admin` |
 | **M2 Portfolio core** | Profile, projects, experience, education, skills, contact, resume | All CV content visible and editable |
-| **M3 CP & integrations** | CP Journey, GitHub/Codeforces sync | Stats refresh daily with no manual step |
-| **M4 Blog** | Editor, renderer, feeds, OG | First post published from admin |
-| **M5 Roadmap Docs** | Content origin, importer, versions, generated pages, CLI | `3_std_vector` served byte-identical with working relative links |
-| **M6 3D & polish** | Scenes, motion, fallbacks | Budgets in [02](02-non-functional-requirements.md) met |
-| **M7 Launch** | SEO, a11y, security and performance audits, content entry | Launch checklist in [15 §9](15-testing-and-qa.md) all green |
+| **M3 Bundle engine & Docs** | Content origin, importer, versions, generated pages, CLI | `3_std_vector` served faithfully with working links |
+| **M4 HTML blog** | Editor, templates, scheduling, index/feeds | First post published from the editor |
+| **M5 Reader accounts & progress** | Session bridge, runtime, `/me`, analytics | Anonymous read-only; signed-in progress syncs across devices |
+| **M6 CP tracking** | 10 adapters, queue, extension ingestion, `/me/cp`, owner CP page | Owner and a test guest see correct data on all API judges |
+| **M7 3D & polish** | Scenes, motion, fallbacks | 3D budgets met |
+| **M8 Launch** | SEO, a11y, security, performance, privacy, content | Launch checklist green |
 
-Detailed estimates and sequencing: [16 — Delivery plan](16-delivery-plan.md).
+Details: [16 — Delivery plan](16-delivery-plan.md).
 
 ## 10. Approval
 

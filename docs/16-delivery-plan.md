@@ -1,9 +1,12 @@
 # 16 — Delivery Plan
 
-> Status: **Draft v0.1** · Related: [00 §9 milestones](00-project-charter.md), [01 PRD](01-product-requirements.md), [15 §8 DoD](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
+> Status: **Draft v0.2** · Related: [00 §9 milestones](00-project-charter.md), [01 PRD](01-product-requirements.md), [15 §8 DoD](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
+>
+> **Revision 0.2:** re-planned for the HTML blog (on the shared bundle engine), guest accounts with
+> sign-in-gated progress, and CP tracking on 10 judges. The estimate grows from ≈ 100 to **≈ 142
+> developer-days**.
 
-Estimates are **ideal developer-days** for one developer working with AI assistance, and carry a
-±30% uncertainty. They exist to sequence work and spot scope risk, not as promises.
+Estimates are **ideal developer-days** for one developer with AI assistance, ±30%.
 
 ---
 
@@ -11,171 +14,200 @@ Estimates are **ideal developer-days** for one developer working with AI assista
 
 | Phase | Goal | Epics | Est. (days) | Exit criteria |
 |---|---|---|--:|---|
-| **P0 Plan & audit** | Agree on what to build | — | — | [19](19-audit-checklist.md) signed; `Q-*` answered |
-| **P1 Foundations** | A deployable skeleton with auth, design tokens and CI | EP-01, EP-02, EP-03, spikes | 24 | Allowlisted Google sign-in works on preview; non-allowlisted is refused; public shell in both themes; CI green; spikes answered |
-| **P2 Portfolio core** | All CV content live and editable | EP-04 | 14.5 | UAT-02, UAT-08, UAT-09 pass |
-| **P3 CP & integrations** | Live stats | EP-05 | 9 | UAT-07 passes; sync runs daily unattended for 3 days |
-| **P4 Blog** | Publish writing | EP-06 | 8 | UAT-03 passes |
-| **P5 Roadmap Docs** | Public roadmap with the reference topic | EP-07 | 19.5 | UAT-04, 05, 06 pass; T-KB-01…22 green |
-| **P6 3D & motion** | The sculpture layer | EP-08 | 11.5 | UAT-10 passes; 3D budgets met |
-| **P7 Launch** | Findable, safe, fast, complete | EP-09, EP-10 | 13 | Launch checklist [15 §9](15-testing-and-qa.md) all ticked |
-| | | **Total** | **≈ 100** | + 20% contingency ≈ **120 days** |
+| **P0 Plan & audit** | Agree on what to build | — | — | [21](21-audit-checklist.md) signed; `Q-*` answered |
+| **P1 Foundations** | Deployable skeleton: CI, Supabase, auth with owner/editor/guest roles, tokens, shells; spikes answered | EP-01, EP-02, EP-03, spikes | 27.5 | Admin reaches `/admin`; any other Google/GitHub account becomes a guest with 403 on `/admin`; public shell in both themes |
+| **P2 Portfolio core** | All CV content live and editable | EP-04 | 16 | UAT-02, UAT-13 |
+| **P3 Bundle engine & Roadmap Docs** | Content origin serving topics faithfully, with the runtime block | EP-07 | 22 | UAT-04, 05, 06; T-KB-* green |
+| **P4 HTML blog** | Write, schedule and publish HTML posts | EP-06 | 9 | UAT-03; T-BLOG-* green |
+| **P5 Reader accounts & progress** | Anonymous read-only, signed-in progress synced, `/me` | EP-11 | 18 | UAT-07, 08, 12; T-RT-*, T-BR-*, T-GU-* green |
+| **P6 CP tracking (owner + guests)** | 10 judges, queue, extension, `/me/cp`, owner CP page | EP-05, EP-12 | 23.5 | UAT-09, 10, 11; T-CPT-* green; queue unattended for 3 days |
+| **P7 3D & motion** | Scenes, motion, fallbacks | EP-08 | 11.5 | UAT-14; 3D budgets met |
+| **P8 Launch** | Search, SEO, privacy, security, a11y, performance, content | EP-09, EP-10 | 14 | Launch checklist [15 §9](15-testing-and-qa.md) |
+| | | **Total** | **≈ 142** | + 20% contingency ≈ **170 days** |
 
-**Calendar view:** full-time (5 days/week) ≈ 20–24 weeks; half-time ≈ 10–12 months. Two
-alternative orderings for the owner (`Q-19`):
-
-- **Docs-first:** P1 → P2 → **P5** → P3 → P4 → P6 → P7. The roadmap goes public sooner. P5 only
-  depends on P1.
-- **Early MVP launch:** P1 → P2 → P5 (single upload + serving + generated pages; no CLI or tree
-  import) → minimal P7 → public launch at ≈ 12 weeks; then P3, P4, P6 and the rest of P5 as
-  follow-ups.
+**Calendar view:** full-time ≈ 28–34 weeks; half-time ≈ 14–17 months.
 
 ```mermaid
 flowchart LR
-  P0["P0 Plan and audit"] --> P1["P1 Foundations"]
+  P0["P0 Plan"] --> P1["P1 Foundations"]
   P1 --> P2["P2 Portfolio core"]
-  P1 --> P5["P5 Roadmap Docs"]
-  P2 --> P3["P3 CP and integrations"]
-  P2 --> P4["P4 Blog"]
-  P3 --> P6["P6 3D and motion"]
-  P2 --> P6
-  P3 & P4 & P5 & P6 --> P7["P7 Launch"]
+  P1 --> P3["P3 Bundle engine and Docs"]
+  P3 --> P4["P4 HTML blog"]
+  P3 --> P5["P5 Reader accounts and progress"]
+  P2 --> P6["P6 CP tracking"]
+  P5 --> P6
+  P2 --> P7["P7 3D and motion"]
+  P4 & P6 & P7 --> P8["P8 Launch"]
 ```
 
-## 2. Technical spikes (time-boxed, done in P1)
+**Ordering options for the owner (`Q-19`):**
 
-| ID | Question | Box | Decides |
+| Option | Sequence | Public launch | Notes |
 |---|---|---|---|
-| SP-01 | One Vercel project serving the apex + `kb.` + preview deployments: how does `proxy.ts` host routing behave on preview URLs, and what KB host do previews use? | 0.5 d | [03 §1](03-information-architecture.md), [14 §1](14-devops-and-environments.md) |
-| SP-02 | Does `Vercel-Cache-Tag` + `invalidateByTag()` purge route-handler responses within 60 s? | 0.5 d | KB caching ([10 §8.4](10-roadmap-docs-system.md)) |
-| SP-03 | `@supabase/ssr` cookie options (host-only, `__Host-` prefix) and `getClaims()` inside Next 16 `proxy.ts` | 0.5 d | [08 §5](08-auth-and-security.md) |
-| SP-04 | Can Next.js hash-based CSP / SRI remove `'unsafe-inline'` on cached public pages? | 0.5 d | [08 §7.1](08-auth-and-security.md) |
-| SP-05 | 3D art direction: S1 prototype at three quality tiers, stills, fps on laptop and phone | 2 d | [05](05-3d-experience.md), design sign-off |
-| SP-06 | Streaming unzip + SHA-256 of a 100 MB zip inside a Vercel function: memory, time, limits | 0.5 d | KB import step size ([10 §7.1](10-roadmap-docs-system.md)) |
-| SP-07 | Before-user-created hook + custom access token hook with Google end-to-end on staging | 0.5 d | [08 §2–3](08-auth-and-security.md) |
+| **A. Complete** | P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 | ≈ 34 weeks | Everything at once |
+| **B. Readers first** (recommended) | P1 → P3 → P5 → P2 → P4 → launch v1 → P6 → P7 → v1.1 | v1 ≈ 22 weeks | Roadmap + accounts + blog + portfolio first; CP tracking and 3D follow as v1.1 releases |
+| **C. Portfolio first** | P1 → P2 → P7 → launch v0.9 → P3 → P4 → P5 → P6 | v0.9 ≈ 12 weeks | Recruiter-facing site early; docs, blog and accounts later |
+
+## 2. Technical spikes (time-boxed, P1)
+
+| ID | Question | Box |
+|---|---|---|
+| SP-01 | One Vercel project serving apex + `read.` + previews: host routing on preview URLs | 0.5 d |
+| SP-02 | `Vercel-Cache-Tag` + `invalidateByTag()` for route-handler responses within 60 s | 0.5 d |
+| SP-03 | `@supabase/ssr` cookie options (host-only, `__Host-`) and `getClaims()` in `proxy.ts` | 0.5 d |
+| SP-04 | Hash-based CSP / SRI on cached pages | 0.5 d |
+| SP-05 | 3D art direction prototype | 2 d |
+| SP-06 | Streaming unzip + SHA-256 in a Vercel function (limits) | 0.5 d |
+| SP-07 | Auth hooks (guest vs admin claims, disposable-domain block) with Google **and GitHub** end-to-end | 0.5 d |
+| SP-08 | **Judge feasibility re-check:** each of the 10 judges' endpoints, rate limits, Cloudflare behaviour and terms; update the capability matrix in [20 §2](20-cp-multi-platform-tracking.md) | 1 d |
+| SP-09 | **Runtime compatibility:** prototype the storage guard + `change`-event reconciliation on the reference bundle (anonymous gating, signed-in sync, no flash) | 1 d |
+| SP-10 | **NEUPC extension compatibility:** point the existing extension at a stub of the ingestion aliases; confirm payloads and auth | 0.5 d |
+| SP-11 | **Session bridge on preview deployments** (preview hosts, cookie prefixes, return URL allowlist) | 0.5 d |
 
 ## 3. Epics
 
 | Epic | Scope | FRs |
 |---|---|---|
 | EP-01 Foundations & DevEx | Scaffold, CI, Supabase projects, env, Sentry, host routing, headers | NFR-MAINT, NFR-SEC-05 |
-| EP-02 Auth & admin shell | Google sign-in, allowlist, roles, admin layout, users, audit, media | FR-AUTH-*, FR-ADM-01/04/11 |
-| EP-03 Design system & public shell | Tokens, fonts, theme, layout, core components | FR-GEN-01/02/04/06/08 |
-| EP-04 Portfolio content | Profile, projects, experience, education, skills, certifications, home, about, resume, contact | FR-HOME, FR-ABOUT, FR-PROJ, FR-EXP, FR-RES, FR-CONTACT |
-| EP-05 CP & integrations | Codeforces, GitHub, scheduling, sync centre, CP page | FR-CP-*, FR-SYNC-* |
-| EP-06 Blog | Markdown pipeline, editor, pages, feeds, OG | FR-BLOG-* |
-| EP-07 Roadmap Docs | Everything in [10](10-roadmap-docs-system.md) | FR-DOCS-* |
-| EP-08 3D & motion | Canvas infrastructure, S1, S2, S4, (S3), motion | FR-HOME-01, FR-CP-06, FR-GEN-07/08 |
-| EP-09 Search, SEO & analytics | ⌘K search, metadata, JSON-LD, sitemaps, analytics, redirects | FR-GEN-03/09, FR-SEO-*, FR-ADM-13 |
-| EP-10 Hardening & launch | Security, a11y, performance, backups, content entry | NFR-* |
+| EP-02 Auth, roles & admin shell | Google + GitHub, hooks, roles, gates, admin layout, allowlist, audit, media | FR-AUTH-*, FR-ADM-01/04/11 |
+| EP-03 Design system & public shell | Tokens, fonts, theme, layout, account menu, core components | FR-GEN-01/02/04/06/08/12 |
+| EP-04 Portfolio content | Profile, projects, experience, education, skills, certifications, home, about, resume, contact, Markdown pipeline for site-rendered fields | FR-HOME, FR-ABOUT, FR-PROJ, FR-EXP, FR-RES, FR-CONTACT, FR-ADM-05 |
+| EP-07 Bundle engine & Roadmap Docs | [10](10-roadmap-docs-system.md) | FR-DOCS-*, FR-ADM-07 |
+| EP-06 HTML blog | Editor, templates, listings, scheduling, feeds, OG | FR-BLOG-*, FR-ADM-18 |
+| EP-11 Reader accounts & progress | Bridge, reader API, runtime, progress model, `/me`, privacy lifecycle, users & readers admin | FR-PROG-*, FR-GUEST-*, FR-ADM-16/17 |
+| EP-05 CP Journey & GitHub (owner) | GitHub sync, public CP page, contests, overrides | FR-CP-*, FR-SYNC-01 |
+| EP-12 Multi-judge tracking engine | Adapters ×10, queue, extension ingestion, `/me/cp`, practice verification, sync centre | FR-CPT-*, FR-SYNC-02…06, FR-ADM-08 |
+| EP-08 3D & motion | Scenes and motion | FR-HOME-01, FR-CP-06, FR-GEN-07/08 |
+| EP-09 Search, SEO & analytics | ⌘K search, metadata, sitemaps, analytics, redirects | FR-GEN-03/09, FR-SEO-*, FR-ADM-13 |
+| EP-10 Hardening & launch | Security, privacy, a11y, performance, backups, content | NFR-* |
 
 ## 4. Backlog
 
 | ID | Story (short) | Epic | Pri | Est |
 |---|---|---|:-:|--:|
-| US-100 | Scaffold Next.js 16 + TS strict + Tailwind v4 + ESLint/Prettier + pnpm | EP-01 | M | 1 |
+| US-100 | Scaffold Next.js 16 + TS strict + Tailwind v4 + lint/format + pnpm | EP-01 | M | 1 |
 | US-101 | CI: lint, typecheck, unit, build, secret grep | EP-01 | M | 1 |
-| US-102 | Supabase local + staging + prod; baseline migrations; type generation in CI | EP-01 | M | 1.5 |
-| US-103 | Env validation, Vercel project, preview deploys, Sentry | EP-01 | M | 1 |
-| US-104 | `proxy.ts` host routing (apex / www / kb) + baseline security headers | EP-01 | M | 1 |
-| US-001 | Google sign-in with allowlist (hooks, callback, proxy gate, `requireRole`) | EP-02 | M | 2 |
-| US-105 | Admin shell: layout, sidebar, role-aware nav, dashboard skeleton | EP-02 | M | 1.5 |
-| US-106 | Users & roles (owner): allowlist CRUD, last-owner guard | EP-02 | M | 1 |
-| US-107 | Audit triggers + audit log viewer | EP-02 | S | 1 |
-| US-108 | Media library: upload, alt/credit/licence, picker, usage guard | EP-02 | M | 2 |
-| US-110 | Tokens, fonts, theme toggle without flash | EP-03 | M | 1.5 |
-| US-111 | Public layout: header, mobile nav, colophon footer, skip link | EP-03 | M | 1.5 |
-| US-112 | Core components: SectionHeading, WallLabel, Timeline, Prose base, Callout, Figure, ProofStrip | EP-03 | M | 2 |
-| US-113 | Internal design specimen page | EP-03 | S | 0.5 |
-| US-121 | Profile, social links and site settings (home sections, SEO defaults, flags) | EP-04 | M | 1.5 |
-| US-010 | Projects CRUD: case-study editor, media, relations, publish, slug redirects | EP-04 | M | 3 |
-| US-120 | Projects index (filters) + case-study page | EP-04 | M | 2 |
-| US-122 | Home page (static hero; 3D comes in P6) | EP-04 | M | 1.5 |
-| US-123 | Experience CRUD + timeline page | EP-04 | M | 1.5 |
-| US-124 | Education, skills, certifications CRUD + About page | EP-04 | M | 2 |
+| US-102 | Supabase local + staging + prod; baseline migrations; type generation | EP-01 | M | 1.5 |
+| US-103 | Env validation, Vercel project, previews, Sentry | EP-01 | M | 1 |
+| US-104 | `proxy.ts` host routing (apex / www / read) + headers | EP-01 | M | 1 |
+| US-001 | Google + GitHub sign-in; hooks (guest vs admin, blocklist); callback; gates; `requireRole`/`requireUser` | EP-02 | M | 2.5 |
+| US-105 | Admin shell | EP-02 | M | 1.5 |
+| US-106 | Admin allowlist management (owner) | EP-02 | M | 1 |
+| US-107 | Audit triggers + viewer | EP-02 | S | 1 |
+| US-108 | Media library | EP-02 | M | 2 |
+| US-110 | Tokens, fonts, theme without flash | EP-03 | M | 1.5 |
+| US-111 | Public layout: header (with account menu), mobile nav, colophon | EP-03 | M | 2 |
+| US-112 | Core components | EP-03 | M | 2 |
+| US-113 | Design specimen page | EP-03 | S | 0.5 |
+| US-121 | Profile, social links, settings | EP-04 | M | 1.5 |
+| US-140 | Markdown pipeline for site-rendered fields (case studies, bio, write-ups, privacy) | EP-04 | M | 1.5 |
+| US-010 | Projects CRUD + case study + publish + redirects | EP-04 | M | 3 |
+| US-120 | Projects index + case-study page | EP-04 | M | 2 |
+| US-122 | Home (static hero) | EP-04 | M | 1.5 |
+| US-123 | Experience | EP-04 | M | 1.5 |
+| US-124 | Education, skills, certifications + About | EP-04 | M | 2 |
 | US-020 | CV versions + `/resume` | EP-04 | M | 1 |
-| US-050 | Contact form (Turnstile, rate limit) + inbox + email notification | EP-04 | M | 1.5 |
-| US-125 | Seed from the CV inventory (as drafts) | EP-04 | M | 0.5 |
-| US-030 | Codeforces adapter + run protocol + snapshot tables | EP-05 | M | 2 |
-| US-130 | GitHub sync + repo stats on projects | EP-05 | M | 1.5 |
-| US-131 | pg_cron/pg_net jobs, `/api/cron/*`, sync centre UI, failure email | EP-05 | M | 1.5 |
-| US-132 | CP page: cards, rating chart, heatmap, contests, tags (2D) | EP-05 | M | 3 |
-| US-133 | CP contests admin + overrides | EP-05 | M | 1 |
-| US-140 | Markdown pipeline + directives + Prose styles (shared) | EP-06 | M | 2.5 |
-| US-141 | Blog editor: CodeMirror, live preview, autosave, revisions | EP-06 | M | 2 |
-| US-142 | Blog index, post, tag and series pages | EP-06 | M | 2 |
-| US-143 | Scheduling, RSS/Atom/JSON feeds, OG images | EP-06 | M | 1.5 |
-| US-150 | KB schema, buckets, CAS object store | EP-07 | M | 1 |
-| US-040 | Single-topic import: upload, unzip, validate, extract, report | EP-07 | M | 3 |
-| US-151 | Content-origin server: resolution, headers, CSP, private files, redirects | EP-07 | M | 2 |
-| US-152 | Generated pages (root/phase/module/coming soon/404), theme extraction, progress script | EP-07 | M | 2.5 |
+| US-050 | Contact form + inbox + email | EP-04 | M | 1.5 |
+| US-125 | Seed from the CV inventory | EP-04 | M | 0.5 |
+| US-150 | Bundle schema, buckets, CAS (subjects: nodes and posts) | EP-07 | M | 1.5 |
+| US-040 | Single import pipeline + validation report | EP-07 | M | 3 |
+| US-151 | Content-origin server: docs/blog namespaces, headers, CSP, private files, redirects | EP-07 | M | 2 |
+| US-158 | Serve-time runtime injection + runtime modes | EP-07 | M | 1 |
+| US-152 | Generated pages + theme extraction | EP-07 | M | 2.5 |
 | US-041 | Versions: publish, rollback, compare, CDN purge | EP-07 | M | 1.5 |
-| US-153 | Preview tokens + sandboxed admin preview | EP-07 | M | 1 |
+| US-153 | Preview tokens + sandboxed preview | EP-07 | M | 1 |
 | US-155 | Outline editor, roadmap settings, link report | EP-07 | M | 2 |
-| US-156 | `/docs` catalog + `/docs/[roadmap]` map | EP-07 | M | 1.5 |
-| US-157 | KB search indexing, KB sitemap/robots | EP-07 | S | 1 |
-| US-043 | Tree import: dry-run plan, stepped processing, apply | EP-07 | S | 2 |
-| US-154 | KB CLI + API tokens | EP-07 | S | 2 |
-| US-160 | Shared canvas, View system, capability gate, poster pipeline | EP-08 | M | 2.5 |
+| US-156 | `/docs` catalog + map | EP-07 | M | 1.5 |
+| US-157 | Search indexing + content-origin sitemap/robots | EP-07 | S | 1 |
+| US-159 | Practice-item extraction + canonical problem keys | EP-07 | S | 1 |
+| US-043 | Tree import (dry run, steps, apply) | EP-07 | S | 2 |
+| US-154 | Bundle CLI + CLI tokens | EP-07 | S | 2 |
+| US-141 | HTML editor: file tree, CodeMirror, assets, sandboxed preview, drafts/autosave, save version | EP-06 | M | 4 |
+| US-146 | Templates library + default "Marble & Ink essay" template | EP-06 | S | 1.5 |
+| US-142 | Blog listings, tags, series, overrides, `/blog/[slug]` redirect | EP-06 | M | 1.5 |
+| US-143 | Scheduling, feeds (summary), OG | EP-06 | M | 1.5 |
+| US-147 | Post metadata extraction + `post.json` + W17 | EP-06 | M | 0.5 |
+| US-200 | `/login`, `user_profiles`, account menu wiring | EP-11 | M | 1 |
+| US-201 | Session bridge + sign-out chain | EP-11 | M | 2 |
+| US-202 | Reader API (me, progress, summary, visit) + validation + CSRF | EP-11 | M | 2 |
+| US-203 | Reader runtime v1 (gating, sync, reconcile, pending queue, chip) + compatibility tests | EP-11 | M | 4 |
+| US-204 | Progress tables/triggers + progress on generated pages and the docs map | EP-11 | M | 1.5 |
+| US-205 | `/me` dashboard + `/me/roadmaps` | EP-11 | M | 3 |
+| US-206 | `/me/settings`: export, delete, sign out everywhere; deletion job | EP-11 | M | 2 |
+| US-207 | Admin Users (ban/delete) + Readers analytics | EP-11 | M | 2 |
+| US-208 | Privacy/terms updates + inactivity job | EP-11 | M | 0.5 |
+| US-130 | GitHub sync + repo stats | EP-05 | M | 1.5 |
+| US-132 | Public CP page (10 judge cards, charts, heatmap, contests, tags) | EP-05 | M | 3 |
+| US-133 | Contests admin + overrides | EP-05 | M | 1 |
+| US-030 | Adapter framework + Codeforces + queue/worker + budgets | EP-12 | M | 3 |
+| US-210 | AtCoder adapter | EP-12 | M | 1 |
+| US-211 | UVa (uHunt) adapter | EP-12 | M | 0.5 |
+| US-212 | VJudge adapter | EP-12 | M | 1 |
+| US-213 | LeetCode adapter (profile, contest history) | EP-12 | M | 1 |
+| US-214 | Toph adapter | EP-12 | S | 1 |
+| US-215 | CodeChef adapter (+ optional CLIST fallback) | EP-12 | S | 1.5 |
+| US-216 | SPOJ, CSES, LightOJ profile adapters (flagged) | EP-12 | S | 1.5 |
+| US-217 | Extension ingestion API + NEUPC-compatible aliases + extension tokens | EP-12 | S | 2 |
+| US-218 | `/me/cp` hub | EP-12 | M | 3 |
+| US-219 | Practice auto-verification | EP-12 | S | 1 |
+| US-131 | Scheduler + sync centre (platform health, queue, kill switches) | EP-12 | M | 1.5 |
+| US-160 | Shared canvas, View system, capability gate, posters | EP-08 | M | 2.5 |
 | US-161 | S1 Plaster Graph | EP-08 | M | 3 |
-| US-162 | S2 Colonnade + table sync | EP-08 | S | 3 |
-| US-163 | S4 Broken Column 404 | EP-08 | S | 0.5 |
-| US-164 | Motion: reveals, view transitions, Lenis on 3D pages | EP-08 | S | 1 |
+| US-162 | S2 Colonnade + table | EP-08 | S | 3 |
+| US-163 | S4 Broken Column | EP-08 | S | 0.5 |
+| US-164 | Motion | EP-08 | S | 1 |
 | US-165 | S3 Exhibit Plinth | EP-08 | C | 1.5 |
-| US-170 | Global search: `search_all`, ⌘K dialog, `/search` | EP-09 | S | 2 |
+| US-170 | Global search (projects, posts, topics) | EP-09 | S | 2 |
 | US-171 | SEO: metadata, JSON-LD, sitemaps, robots | EP-09 | M | 1.5 |
-| US-172 | Analytics, Speed Insights, privacy page | EP-09 | S | 0.5 |
-| US-173 | Redirect manager UI | EP-09 | S | 0.5 |
-| US-180 | Security hardening: final CSP, header tests, rate limits | EP-10 | M | 1.5 |
+| US-172 | Analytics, Speed Insights | EP-09 | S | 0.5 |
+| US-173 | Redirect manager | EP-09 | S | 0.5 |
+| US-180 | Security hardening | EP-10 | M | 1.5 |
+| US-185 | Privacy & security review of guest data flows (threat model walk-through, RLS matrix review) | EP-10 | M | 1 |
 | US-181 | Accessibility audit and fixes | EP-10 | M | 2 |
 | US-182 | Performance audit and fixes | EP-10 | M | 2 |
-| US-183 | Backup workflow, restore drill, runbooks | EP-10 | M | 1 |
+| US-183 | Backups, restore drill (with deletion-log replay), runbooks | EP-10 | M | 1 |
 | US-184 | Content entry support + launch checklist | EP-10 | M | 2 |
 
-PRD stories delivered inside other backlog items: **US-042** (coming-soon pages) → US-152 ·
-**US-060** (3D off toggle) → US-160 · **US-070** (roadmap progress on generated indexes) → US-152.
+PRD stories delivered inside other items: **US-042** → US-152 · **US-060** → US-160 · **US-070** →
+US-204 · **US-080/081/082** → US-203/US-201/US-202 · **US-083** → US-212/US-218/US-219 · **US-084** →
+US-217 · **US-085** → US-206 · **US-090** → US-141/US-146 · **US-091** → US-143.
 
-Post-launch candidates (not estimated): Giscus comments (FR-BLOG-12), view counter (FR-BLOG-11),
-announcement bar (FR-GEN-10), content health (FR-ADM-14), admin command palette (FR-ADM-15), AtCoder /
-LeetCode / NEUPC adapters (FR-SYNC-03), in-admin topic authoring (FR-DOCS-11), Now/Uses pages,
-print stylesheet, Bengali localisation, reader accounts.
+Post-launch candidates: comments via template, view counter, public learner profiles with handle
+verification, reader bookmarks, email magic-link sign-in, CLIST-wide contest calendar, Bengali
+localisation.
 
-## 5. Definition of Ready (before a story starts)
+## 5. Definition of Ready
 
-- [ ] It references its FR/NFR IDs and has acceptance criteria
-- [ ] Design is known (wireframe or an existing component) for UI stories
-- [ ] Data model changes are identified (migration named)
-- [ ] Dependencies (spikes, other stories, owner content) are resolved
-- [ ] Estimate ≤ 3 days (otherwise split)
+- [ ] References FR/NFR IDs; has acceptance criteria
+- [ ] UI design known (wireframe or component)
+- [ ] Data model changes identified
+- [ ] Dependencies resolved (spikes, stories, owner content, judge fixtures recorded)
+- [ ] Estimate ≤ 4 days (otherwise split)
 
 Definition of Done: [15 §8](15-testing-and-qa.md).
 
 ## 6. Ways of working
 
-| Practice | Detail |
-|---|---|
-| Cadence | 1-week iterations: plan Monday (pick stories), demo Friday on the preview URL |
-| Tracking | GitHub Issues (one per story, labelled by epic and priority) + a GitHub Project board (Backlog → Ready → In progress → Review → Done) |
-| Demos | Each phase ends with a recorded walkthrough and the owner's sign-off against its exit criteria |
-| Scope changes | New ideas go to the backlog with a priority; mid-phase changes need the owner's explicit trade-off (what moves out) |
+Weekly iterations with a Friday demo on preview URLs; GitHub Issues + Project board; phase
+sign-off against exit criteria; scope changes require an explicit trade-off.
 
 ## 7. Release plan
 
-| Stage | Audience | Where | Gate |
-|---|---|---|---|
-| Internal preview | Owner | Staging / preview URLs | Each phase's exit criteria |
-| Soft launch | 5–10 trusted peers (club members, a senior engineer, a recruiter friend) | Production domain, not announced | Launch checklist minus SEO submission; feedback form |
-| Public launch | Everyone | Production | All launch checklist items + soft-launch fixes; announce on LinkedIn, GitHub profile README, Codeforces profile, NEUPC Discord |
-| v1.1 | — | — | Top post-launch candidates chosen from analytics and feedback |
+| Stage | Audience | Gate |
+|---|---|---|
+| Internal preview | Owner | Phase exit criteria |
+| Closed beta for readers | 10–20 NEUPC members as guests (staging or production with invite-only sign-up flag) | P5 done; privacy page live; feedback form |
+| Soft launch | Trusted peers, a recruiter friend | Launch checklist minus SEO submission |
+| Public launch | Everyone | Full launch checklist; announce on LinkedIn, GitHub README, Codeforces profile, NEUPC Discord |
+| v1.1 | — | Chosen from analytics and beta feedback (e.g. P6/P7 under option B) |
 
 ## 8. Owner-supplied content timeline
 
-Content is often the real critical path. Needed by phase (full list in [18 §9](18-content-inventory.md)):
-
 | Needed by | Content |
 |---|---|
-| P1 | Domain decision, owner Google email, accent colour and font choice |
-| P2 | Portrait (optional), project screenshots and URLs, final CGPA, experience entries beyond leadership, certificate links, current CV PDF |
-| P3 | Other judge handles, ICPC/IUPC details (team names, teammates' consent, ranks, photos) |
-| P4 | 1–3 launch posts (drafts) |
-| P5 | Roadmap outline (all planned topics with serials), published bundles, licence decision, decision on `data/` sources |
+| P1 | Domain; content-origin name (`Q-04`); owner Google email; accent/fonts; GitHub OAuth app for sign-in |
+| P2 | Portrait, project screenshots and URLs, final CGPA, experience entries, certificate links, current CV |
+| P3 | Roadmap outline (all topics, serials) and bundles; licence; decision on `data/` sources |
+| P4 | 1–3 launch posts (or drafts to finish in the editor) |
+| P5 | Privacy/terms wording approval; inactivity policy (`Q-34`) |
+| P6 | Owner handles on all 10 judges; ICPC/IUPC details; decisions on scraping (`Q-29`), extension (`Q-30`), CLIST (`Q-31`) |

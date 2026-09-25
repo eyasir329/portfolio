@@ -1,32 +1,42 @@
 # 06 — System Architecture
 
-> Status: **Draft v0.1** · Related: [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Roadmap Docs](10-roadmap-docs-system.md), [13 API](13-api-and-data-flow.md), [14 DevOps](14-devops-and-environments.md), [17 ADRs](17-risks-and-decisions.md)
+> Status: **Draft v0.2** · Related: [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [13 API](13-api-and-data-flow.md), [14 DevOps](14-devops-and-environments.md), [17 ADRs](17-risks-and-decisions.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
+>
+> **Revision 0.2:** content origin renamed `read.` and extended to blog posts; reader runtime, reader
+> API and session bridge; guest accounts; CP worker queue for 10 judges; extension ingestion.
 
 ---
 
 ## 1. Architecture at a glance
 
-A **single Next.js 16 application** deployed on **Vercel** serves two hostnames: the portfolio and
-admin (main origin), and the isolated Roadmap Docs **content origin**. **Supabase** provides Postgres
-(with RLS), Auth (Google OAuth) and Storage. Scheduled work is triggered by **pg_cron + pg_net**
-inside Supabase, which calls authenticated route handlers.
+A **single Next.js 16 application** on **Vercel** serves two hosts:
+
+- the **main origin**: portfolio, blog index, docs map, sign-in, reader panel, admin and APIs;
+- the **content origin**: HTML bundles for topics and posts, generated pages, reader runtime and
+  reader API.
+
+**Supabase** provides Postgres (RLS), Auth (Google + GitHub) and Storage. **pg_cron + pg_net** drive
+scheduled work, including a CP sync worker every minute.
 
 ### 1.1 System context (C4 level 1)
 
 ```mermaid
 flowchart LR
-  V(["Visitor: recruiter, engineer, learner"]) --> SITE["eyasir329.dev: portfolio, blog, docs catalog"]
-  V --> KB["kb.eyasir329.dev: roadmap topic pages"]
+  V(["Anonymous visitor"]) --> SITE["eyasir329.dev"]
+  V --> READ["read.eyasir329.dev: topics and posts"]
+  GU(["Signed-in guest"]) --> SITE
+  GU --> READ
   AD(["Admin: owner/editor"]) --> SITE
-  CLI(["kb CLI on owner's laptop"]) --> SITE
+  CLI(["Bundle CLI"]) --> SITE
+  EXT(["Browser extension"]) --> SITE
   SITE --> SB[("Supabase: Postgres, Auth, Storage")]
-  KB --> SB
+  READ --> SB
+  SB --> IDP["Google / GitHub OAuth"]
   SITE --> GH["GitHub API"]
-  SITE --> CF["Codeforces API"]
-  SITE --> OJ["Other judges: AtCoder, LeetCode (later)"]
-  SB --> GO["Google OAuth"]
-  SITE --> TS["Cloudflare Turnstile"]
-  SITE --> RS["Resend email"]
+  SITE --> JUD["10 judges: Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph, VJudge"]
+  SITE --> CLS["CLIST.by (optional)"]
+  SITE --> TS["Turnstile"]
+  SITE --> RS["Resend"]
   SITE --> SE["Sentry"]
   SB -- "pg_cron + pg_net" --> SITE
 ```
@@ -36,266 +46,206 @@ flowchart LR
 ```mermaid
 flowchart TB
   subgraph Vercel["Vercel project (one deployment)"]
-    PX["proxy.ts: host routing, session refresh, admin gate, security headers"]
+    PX["proxy.ts: host routing, session refresh, role gates, headers"]
     subgraph App["Next.js App Router"]
-      PUB["(site) public routes: RSC + Cache Components"]
-      ADM["(admin) routes: dynamic RSC + Server Actions"]
-      API["Route handlers: auth, cron, revalidate, kb import, og, feeds"]
-      KBR["KB file server: route handler for the kb host"]
+      PUB["(site) public routes"]
+      ME["(me) reader panel"]
+      ADM["(admin) routes + Server Actions"]
+      API["Route handlers: auth, bridge, cron, workers, bundles, extension, feeds, og"]
+      CO["Content-origin handler: bundle files, generated pages, runtime, reader API"]
     end
-    CDN["Vercel CDN: static assets, cached HTML, cache tags"]
+    CDN["Vercel CDN"]
   end
   subgraph Supabase
-    PG[("Postgres 17: schema + RLS + pg_cron + pg_net + FTS")]
-    AU["Auth: Google provider + hooks"]
-    ST["Storage: media, resumes, kb-objects, kb-uploads"]
+    PG[("Postgres: schema, RLS, FTS, pg_cron, pg_net, queue")]
+    AU["Auth: Google, GitHub, hooks"]
+    ST["Storage: media, resumes, bundle-uploads, bundle-objects"]
   end
-  PX --> PUB & ADM & API & KBR
+  PX --> PUB & ME & ADM & API & CO
   PUB --> PG
+  ME --> PG
   ADM --> PG & ST
   API --> PG & ST
-  KBR --> PG & ST
+  CO --> PG & ST
   AU --> PG
-  PG -- "cron / webhooks" --> API
+  PG -- "cron, webhooks" --> API
   CDN --- PX
 ```
 
 ## 2. Technology stack
 
-Versions are the **targets at scaffold time**. The exact minor versions get pinned in
-`package.json` during Phase 1 and recorded in the Phase 1 PR.
-
 | Layer | Choice | Why | ADR |
 |---|---|---|---|
-| Framework | **Next.js 16** (App Router, Turbopack, Cache Components, `proxy.ts`) | RSC for zero-JS content pages, Server Actions for admin, first-class Vercel support; mandated | ADR-001 |
-| UI runtime | **React 19** | Required by Next 16; Actions, `useOptimistic`, `useFormStatus` | — |
-| Language | **TypeScript 5.x** `strict` | Safety across DB types → UI | — |
-| Styling | **Tailwind CSS v4** (CSS-first `@theme`) + CSS custom-property tokens | Fast, token-driven, tiny CSS | ADR-011 |
-| Admin UI kit | **shadcn/ui** (Radix primitives) | Accessible primitives we own as source | ADR-011 |
-| 3D | **three.js** + **@react-three/fiber v9** + **@react-three/drei** + `detect-gpu` | Mandated Three.js; R3F fits React | ADR-008 |
-| Motion | **Motion** (DOM), **Lenis** (smooth scroll, 3D pages only) | Small, accessible (reduced-motion aware) | — |
-| Data | **Supabase** Postgres 17, `@supabase/supabase-js` v2 + `@supabase/ssr`, generated types | Mandated; RLS-first; no ORM layer to keep in sync | ADR-002 |
-| Validation | **Zod** (v4) | One schema for forms, actions and APIs | — |
-| Forms | React Hook Form + `@hookform/resolvers/zod` | Mature, fast | — |
-| Tables | TanStack Table | Server-side pagination/sort for admin | — |
-| Markdown | unified: `remark-parse`, `remark-gfm`, `remark-math`, `remark-directive`, `remark-rehype`, `rehype-katex`, `rehype-slug`, `rehype-autolink-headings`, **Shiki** (`@shikijs/rehype`), custom directive handlers | Safe (no raw HTML), fast, cacheable | ADR-007 |
-| Editor | CodeMirror 6 (Markdown mode) | Lightweight, extensible, great for code-heavy posts | ADR-007 |
-| KB ingestion | `fflate` (streaming unzip), `parse5` / `node-html-parser` (metadata extraction), Node `crypto` (SHA-256) | Pure JS, works in Vercel functions | ADR-004/005/006 |
-| Search | Postgres full-text search (`tsvector`, GIN) + `pg_trgm` | No extra service | ADR-009 |
-| Charts | Hand-rolled SVG (server-rendered) + small client tooltip; **visx** as a fallback for complex charts | Tiny, themeable, accessible | — |
-| Email | **Resend** + React Email templates | Simple, free tier | — |
-| Bot protection | **Cloudflare Turnstile** | Privacy-friendly CAPTCHA alternative | — |
-| Analytics | **Vercel Web Analytics + Speed Insights** (cookieless) | Zero setup; field Core Web Vitals | — |
-| Errors | **Sentry** (`@sentry/nextjs`) | Errors + traces, free tier | — |
-| Scheduling | **pg_cron + pg_net** (primary), Vercel Cron (daily backup trigger) | Vercel Hobby cron is limited to once/day | ADR-010 |
-| Package manager | **pnpm** | Fast, strict | — |
-| Lint/format | ESLint (flat config, `eslint-config-next`) + Prettier (+ Tailwind plugin) | Standard | — |
-| Tests | Vitest, Testing Library, Playwright, `@axe-core/playwright`, Lighthouse CI, pgTAP (`supabase test db`) | See [15](15-testing-and-qa.md) | — |
-| Hosting | **Vercel** (Hobby at launch) | Mandated by the existing workflow; CDN + functions | — |
+| Framework | **Next.js 16** (App Router, Turbopack, Cache Components, `proxy.ts`) | RSC, Server Actions, Vercel-native | ADR-001 |
+| UI runtime | **React 19** | Required by Next 16 | — |
+| Language | **TypeScript** strict | End-to-end types | — |
+| Styling | **Tailwind CSS v4** + CSS tokens | Token-driven | ADR-011 |
+| Admin UI | **shadcn/ui** (Radix) | Accessible, owned source | ADR-011 |
+| 3D | three.js + R3F v9 + drei + detect-gpu | Mandated; progressive enhancement | ADR-008 |
+| Motion | Motion, Lenis (3D pages only) | Small, reduced-motion aware | — |
+| Data | Supabase Postgres + `@supabase/supabase-js` + `@supabase/ssr`, generated types, SQL migrations | RLS-first, no ORM | ADR-002 |
+| Auth | Supabase Auth (Google, GitHub) + hooks; custom reader-session bridge for the content origin | Guests + allowlisted admins in one system | ADR-003, ADR-015 |
+| Validation / forms / tables | Zod · React Hook Form · TanStack Table | — | — |
+| Site-rendered rich text | Markdown via unified/remark/rehype + Shiki + KaTeX (case studies, bio, write-ups, privacy) | Safe on the main origin | ADR-007 (narrowed) |
+| **Author HTML** (topics, posts) | **Bundle engine**: `fflate` (zip), `parse5` (metadata extraction, runtime injection), SHA-256 CAS | Faithful rendering, versioning | ADR-004/005/006/014/020 |
+| **HTML editor** | CodeMirror 6 (HTML/CSS/JS), Prettier standalone in a worker | Write posts/topics in admin | ADR-014 |
+| **Reader runtime** | Vanilla TS → `runtime.v1.js` (≤ 8 KB gzip), built by esbuild | Runs inside untrusted pages; no framework | ADR-016 |
+| **Judge adapters** | TypeScript ports of NEUPC services; `node-html-parser` for HTML adapters | Reuse proven logic | ADR-017, ADR-018 |
+| Queue | Postgres table + `FOR UPDATE SKIP LOCKED`, pg_cron worker | No extra service | ADR-019 |
+| Search | Postgres FTS + `pg_trgm` | No extra service | ADR-009 |
+| Charts | Server-rendered SVG + small client tooltips | Tiny, accessible | — |
+| Email · bot protection · analytics · errors | Resend · Turnstile · Vercel Analytics/Speed Insights · Sentry | Free tiers | — |
+| Scheduling | pg_cron + pg_net (primary), Vercel Cron (daily backup) | Hobby cron limit | ADR-010 |
+| Tooling | pnpm, ESLint + Prettier, Vitest, Playwright, axe, Lighthouse CI, pgTAP | — | — |
+| Hosting | Vercel (Hobby at launch) | — | — |
 
-## 3. Rendering & caching strategy
-
-Next.js 16 **Cache Components** is enabled (`cacheComponents: true`), so nothing is cached unless
-explicitly marked. Public data loaders are `"use cache"` functions tagged per entity. Admin
-mutations invalidate those tags.
+## 3. Rendering & caching
 
 | Surface | Strategy | Invalidation |
 |---|---|---|
-| Public pages | Static shell (prerendered) + cached data functions (`"use cache"`, `cacheLife('days')`, `cacheTag(...)`). Dynamic holes (e.g. theme-independent) are avoided; search params pages stream | `updateTag()` in server actions (read-your-writes for the admin); `revalidateTag()` from cron/webhook handlers |
-| Admin pages | Fully dynamic (per-request, session-bound); never cached | n/a |
-| Feeds, sitemaps, OG | Route handlers with `"use cache"` + tags | Same tags as the content |
-| KB content origin | Route handler streams from Storage. Responses carry `Cache-Control: public, max-age=60, s-maxage=31536000, stale-while-revalidate=86400` and a `Vercel-Cache-Tag` of `kb:{roadmapId}` + `kb-node:{nodeId}` | On publish/rollback: `invalidateByTag('kb-node:{id}')` via `@vercel/functions` (validated in `SP-02`) |
-| Static assets | Hashed filenames, `immutable` | New deploy |
+| Public main-origin pages | Prerendered shell + `"use cache"` loaders with tags | `updateTag` in actions; `revalidateTag` from jobs |
+| `/docs/[roadmap]` progress dots | Dynamic hole (per user) inside a cached page | n/a (no-store) |
+| `/me/**`, `/admin/**` | Dynamic, never cached | n/a |
+| Content-origin HTML and files | Same bytes for every visitor (runtime block is identical for all) → CDN cached; `Vercel-Cache-Tag: content:{subjectId}` | `invalidateByTag` on publish/rollback |
+| Reader API (`/__api/*`) | `private, no-store` | n/a |
+| Feeds, sitemaps, OG | Cached with content tags | Same tags |
 
-**Cache tag catalogue** (single source of truth: `lib/cache/tags.ts`):
-
-| Tag | Invalidated when |
-|---|---|
-| `settings`, `profile` | Settings/profile saved |
-| `projects`, `project:{id}` | Project saved/published/reordered |
-| `experiences`, `education`, `skills`, `certifications` | Respective entity saved |
-| `cp` | CP profile/contest saved; sync finished |
-| `github` | GitHub sync finished |
-| `posts`, `post:{id}` | Post saved/published/scheduled publish fired |
-| `docs`, `docs:{roadmapId}` | Roadmap/outline/node status changed, version published |
-| `kb-node:{nodeId}` (CDN) | Version published/rolled back, visibility changed |
-| `resume` | CV version switched |
-| `redirects` | Redirect added/removed |
+**Tag catalogue** (`lib/cache/tags.ts`): `settings`, `profile`, `projects`, `project:{id}`,
+`experiences`, `education`, `skills`, `certifications`, `cp` (owner's public CP data), `github`,
+`posts`, `post:{id}`, `docs`, `docs:{roadmapId}`, `resume`, `redirects`; CDN tags
+`content:{subjectId}`.
 
 ## 4. Layered code architecture
 
 ```mermaid
 flowchart TB
-  UI["app/: routes, layouts, pages (RSC) + client islands"] --> ACT["Server Actions / Route handlers: auth check, Zod validation, audit"]
+  UI["app/: routes (site, me, admin), client islands"] --> ACT["Server Actions / route handlers: authn, authz, Zod, audit"]
   UI --> DATA
-  ACT --> SVC["lib/services: use-cases (publishVersion, importBundle, syncCodeforces)"]
-  SVC --> DATA["lib/data: typed queries, server-only, cached loaders"]
-  SVC --> INT["lib/integrations: GitHub, Codeforces, judges adapters"]
-  SVC --> KBL["lib/kb: unzip, validate, extract, resolve, serve"]
-  DATA --> SBC["lib/supabase: server/browser/admin clients"]
-  KBL --> SBC
-  INT --> EXT["External APIs"]
+  ACT --> SVC["lib/services: use-cases"]
+  SVC --> DATA["lib/data: typed queries + cached loaders (server-only)"]
+  SVC --> BUN["lib/bundles: unzip, validate, extract, CAS, inject, serve, generate"]
+  SVC --> RDR["lib/reader: sessions, bridge, progress, verification"]
+  SVC --> CPX["lib/cp: adapters, problem keys, queue worker, extension ingest"]
+  SVC --> INT["lib/integrations: GitHub, Resend, Turnstile"]
+  DATA & BUN & RDR & CPX --> SBC["lib/supabase: server, browser, admin clients"]
+  RT["runtime/ (separate build): reader runtime for the content origin"]
 ```
 
-Rules:
-- `lib/data/*` and `lib/services/*` import `server-only`. Client components get data as props or
-  through server actions only.
-- Three Supabase clients: `createServerClient` (cookie session, RLS as the user), `createBrowserClient`
-  (admin UI realtime/uploads only), `createAdminClient` (secret key, bypasses RLS). The admin client
-  is allowed **only** in `lib/services/*` for cron, sync, contact insert and KB serving, never in
-  code paths that run with user input unless the user is already authorised.
-- Every server action follows the same shape:
-  `requireRole()` → `schema.parse()` → service call → `audit()` → `updateTag()` → typed result.
+Rules: `lib/data`, `lib/services`, `lib/bundles`, `lib/reader`, `lib/cp` are `server-only`. The
+secret-key client is used only in services for cron/workers, contact, bundle serving, reader-API
+writes (after session validation) and extension ingestion (after token validation).
 
 ## 5. Host routing (`proxy.ts`)
 
 ```mermaid
 flowchart TD
-  R["Incoming request"] --> H{"Host header"}
+  R["Request"] --> H{"Host"}
   H -- "www.*" --> WW["308 to apex"]
-  H -- "kb.*" --> K["Rewrite to /_kb/[...path], add KB security headers, skip auth entirely"]
-  H -- "apex" --> A{"Path starts with /admin?"}
-  A -- yes --> S["Refresh Supabase session cookies. No session: redirect to /admin/login?next=… . No role claim: /admin/login?error=unauthorised"]
-  A -- no --> P["Public: add security headers, lowercase redirect, redirects table lookup (cached)"]
+  H -- "read.*" --> K["Rewrite to /_content/…, content-origin headers, no Supabase session work"]
+  H -- "apex" --> A{"Path"}
+  A -- "/admin/**" --> S["Refresh session, require owner/editor, else login or 403"]
+  A -- "/me/**" --> G["Refresh session, require any user, else /login?return="]
+  A -- "other" --> P["Refresh session if cookies exist (header avatar), security headers, redirects lookup"]
 ```
 
-- `/_kb/*` is **only** reachable through the kb host (a direct request on the apex returns 404).
-- Proxy runs on the Node.js runtime (Next 16), so it can use the same Supabase SSR helper as route
-  handlers.
+`/_content/*` is reachable only through the content host (404 on the apex).
 
 ## 6. Key sequences
 
-### 6.1 Public page request (cache hit / miss)
+### 6.1 Public page request
 
-```mermaid
-sequenceDiagram
-  participant B as Browser
-  participant C as Vercel CDN
-  participant N as Next.js
-  participant D as Supabase
-  B->>C: GET /projects/neupc
-  alt cached
-    C-->>B: 200 HTML (prerendered + cached data)
-  else miss or stale
-    C->>N: render
-    N->>N: "use cache" loader: getProject('neupc')
-    N->>D: select … where slug=… (anon key, RLS: published only)
-    D-->>N: row
-    N-->>C: HTML + cache tags
-    C-->>B: 200 HTML
-  end
-```
+Unchanged from revision 0.1: CDN hit, or render with cached loaders under RLS.
 
 ### 6.2 Admin edits content
 
-```mermaid
-sequenceDiagram
-  participant A as Admin browser
-  participant N as Server Action
-  participant D as Supabase (RLS as admin)
-  A->>N: saveProject(formData)
-  N->>N: requireRole('editor') via getClaims()
-  N->>N: ProjectSchema.parse()
-  N->>D: upsert projects … (RLS checks app_role claim)
-  D-->>N: row (+ audit trigger writes audit_log)
-  N->>N: updateTag('projects'), updateTag('project:{id}')
-  N-->>A: { ok: true, data }
-```
+`requireRole` → Zod → upsert under RLS → audit trigger → `updateTag` → typed result.
 
-### 6.3 Content-origin request (topic page)
+### 6.3 Content-origin request (topic or post)
 
 ```mermaid
 sequenceDiagram
   participant B as Reader
   participant C as Vercel CDN
-  participant K as KB route handler
+  participant K as Content-origin handler
   participant D as Postgres
-  participant S as Storage (kb-objects, private)
-  B->>C: GET kb.…/cp/phase-1/1_basics/3_std_vector/
+  participant S as Storage
+  B->>C: GET read…/docs/cp/phase-1/1_basics/3_std_vector/
   alt CDN hit
-    C-->>B: 200 index.html (bytes as uploaded)
+    C-->>B: 200 (stored bytes + runtime block)
   else miss
     C->>K: forward
-    K->>D: resolve(roadmap='cp', path) → node + published manifest (cached by version id)
-    K->>S: download objects/{sha256}
-    S-->>K: bytes
-    K-->>C: 200 + Content-Type + CSP + ETag + Vercel-Cache-Tag
+    K->>D: resolve subject + published manifest (cached by version id)
+    K->>S: object by sha256
+    K->>K: inject runtime block before </head>
+    K-->>C: 200 + headers + cache tag
     C-->>B: 200
   end
+  B->>K: GET /__rt/runtime.v1.js (immutable)
+  B->>K: GET /__api/progress?node=… (reader session, no-store)
+  K->>D: select own progress (validated session → user_id)
+  K-->>B: progress JSON → runtime applies it
 ```
 
-### 6.4 Bundle import & publish
+### 6.4 Guest sign-in from the content origin
 
-Covered step by step in [10 §6](10-roadmap-docs-system.md).
+See [19 §2.2](19-guest-accounts-and-progress.md) (main-origin OAuth → one-time code → reader
+session).
 
-### 6.5 Scheduled sync
+### 6.5 Scheduled and queued sync
 
 ```mermaid
 sequenceDiagram
-  participant Cron as pg_cron (Supabase)
-  participant Net as pg_net
-  participant API as /api/cron/sync-codeforces
-  participant CF as Codeforces API
+  participant Cron as pg_cron
+  participant W as /api/cron/cp-worker
   participant DB as Postgres
-  Cron->>Net: 03:10 UTC daily
-  Net->>API: POST (Bearer CRON_SECRET)
-  API->>DB: insert sync_runs(status='running') + advisory lock
-  API->>CF: user.info, user.rating, user.status (≥ 2 s apart)
-  CF-->>API: JSON
-  API->>DB: upsert profiles / rating changes / solved / daily aggregates
-  API->>DB: update sync_runs(status='succeeded', stats)
-  API->>API: revalidateTag('cp')
+  participant J as Judge APIs / pages
+  Cron->>W: every minute (Bearer CRON_SECRET)
+  loop until 50 s budget used
+    W->>DB: claim_cp_jobs(n) FOR UPDATE SKIP LOCKED
+    W->>DB: platform budget ok? (next_allowed_at)
+    W->>J: adapter calls (incremental cursor)
+    J-->>W: data
+    W->>DB: upsert accounts, solves, ratings, activity, verify_practice(user)
+    W->>DB: job done / re-queue with backoff
+  end
+  W->>W: revalidateTag('cp') if any public (owner) account changed
 ```
+
+### 6.6 Bundle import & publish
+
+[10 §6.2](10-roadmap-docs-system.md).
 
 ## 7. Repository layout (planned)
 
 ```text
 /
 ├─ app/
-│  ├─ (site)/                      # public portfolio (Marble & Ink layout, shared 3D canvas)
-│  │  ├─ page.tsx                  # Home
-│  │  ├─ about/ projects/ experience/ cp/ blog/ docs/ contact/ privacy/
-│  │  └─ layout.tsx
-│  ├─ (admin)/admin/               # admin panel (shadcn layout); login is public
-│  ├─ _kb/[...path]/route.ts       # content-origin file server (reached only via kb host rewrite)
-│  ├─ auth/callback/route.ts
-│  ├─ api/{cron,revalidate,kb,views,health}/…
-│  ├─ og/[type]/[id]/route.tsx
-│  ├─ feed.xml/route.ts  sitemap.ts  robots.ts  manifest.ts
-│  └─ not-found.tsx  error.tsx  global-error.tsx
-├─ components/{ui,site,admin,three,prose}/
-├─ lib/
-│  ├─ supabase/{server,browser,admin}.ts
-│  ├─ auth/{require-role,claims}.ts
-│  ├─ data/…                       # cached loaders per entity (server-only)
-│  ├─ services/…                   # use-cases (server-only)
-│  ├─ kb/{unzip,validate,extract,manifest,resolve,serve,generate}/…
-│  ├─ integrations/{github,codeforces,judges}/…
-│  ├─ markdown/{pipeline,directives,toc,reading-time}.ts
-│  ├─ cache/tags.ts  seo/…  validation/…  security/{csp,headers,rate-limit}.ts
+│  ├─ (site)/            # public portfolio, blog index, docs catalog/map, login
+│  ├─ (me)/me/           # reader panel
+│  ├─ (admin)/admin/     # admin panel (HTML editor under blog/, docs/, templates/)
+│  ├─ _content/[...path]/route.ts   # content-origin handler (files, generated pages, /__api, /__auth, /__rt)
+│  ├─ auth/{callback,bridge,signout}/route.ts
+│  ├─ api/{cron,revalidate,bundles,cp/ext,problem-solving,views,health}/…
+│  ├─ blog/[slug]/route.ts          # 308 to the content origin
+│  ├─ og/[type]/[id]/route.tsx  feed.xml/  sitemap.ts  robots.ts
+├─ components/{ui,site,me,admin,three,prose,editor}/
+├─ lib/{supabase,auth,data,services,bundles,reader,cp,integrations,markdown,cache,seo,validation,security}/
+├─ runtime/                          # reader runtime source (vanilla TS) → public/__rt/runtime.v1.js
 ├─ proxy.ts
-├─ supabase/
-│  ├─ config.toml
-│  ├─ migrations/*.sql             # forward-only, timestamped
-│  ├─ seed.sql                     # generated from docs/18 inventory
-│  └─ tests/*.sql                  # pgTAP RLS tests
-├─ scripts/
-│  ├─ kb-cli/                      # `pnpm kb push` (bulk upload via API)
-│  ├─ build-scene-layouts.ts       # 3D layout precompute
-│  └─ render-posters.ts            # 3D posters
-├─ public/{3d,posters,fonts?}/
-├─ tests/{unit,e2e,fixtures/kb}/
-├─ docs/                           # ← this planning set
-└─ .github/workflows/ci.yml …
+├─ supabase/{config.toml,migrations/,seed.sql,tests/}
+├─ scripts/{bundle-cli/,build-scene-layouts.ts,render-posters.ts}
+├─ public/{3d,posters}/
+├─ tests/{unit,e2e,fixtures/{bundles,judges,markdown}}/
+└─ docs/
 ```
 
 ## 8. Cross-cutting concerns
 
 | Concern | Approach |
 |---|---|
-| Configuration | Typed env loader (`lib/env.ts`, Zod): fail fast at boot if a required variable is missing |
-| Feature flags | `site_settings.flags` (JSON): `threeD`, `comments`, `viewCounter`, `announcement`; read through the cached `settings` loader |
-| Logging | Structured `console` JSON in route handlers/actions (Vercel logs) + Sentry breadcrumbs; secrets and emails redacted |
-| Errors | `error.tsx` boundaries per segment; server actions return typed errors, never throw to the client; Sentry captures with a digest ID |
-| Time | All timestamps `timestamptz` in UTC; displayed in `Asia/Dhaka` by default (configurable) |
-| i18n readiness | Strings for public chrome in one `lib/copy.ts`; content is single-language in v1 |
+| Configuration | Typed env (`lib/env.ts`); fail fast |
+| Feature flags | `site_settings.flags` + per-platform `cp_platforms.enabled`/`scraping_enabled` |
+| Logging | Structured logs; secrets, emails and tokens redacted; judge responses never logged in full |
+| Errors | Segment error boundaries; typed action errors; Sentry with digests |
+| Time | UTC storage; display in the viewer's timezone (`/me`), `Asia/Dhaka` for owner pages |
+| Privacy by design | Guest data behind RLS; aggregates for admin; export/delete built in from day one |

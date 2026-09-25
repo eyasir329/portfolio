@@ -1,122 +1,146 @@
 # 13 — API & Data Flow
 
-> Status: **Draft v0.1** · Related: [03 §3.3](03-information-architecture.md), [06 §3–4](06-system-architecture.md), [08 §4](08-auth-and-security.md), [10 §6–8](10-roadmap-docs-system.md)
+> Status: **Draft v0.2** · Related: [03 §3.3–3.4](03-information-architecture.md), [06 §3–4](06-system-architecture.md), [08 §4–5](08-auth-and-security.md), [10 §6–8](10-roadmap-docs-system.md), [19](19-guest-accounts-and-progress.md), [20](20-cp-multi-platform-tracking.md)
 
 ---
 
 ## 1. Principles
 
-1. **Reads** on public pages are server-side cached loaders (`lib/data/*`, `"use cache"`), queried
-   with the publishable key under RLS. No public REST API is exposed for content.
-2. **Admin writes** are **Server Actions** (typed, CSRF-protected by Next.js, colocated with forms).
-3. **Route handlers** exist only for callers that aren't our own React forms: OAuth callback, cron,
-   webhooks, the CLI, feeds, OG images, the content origin, health.
-4. One **Zod schema per input**, shared by client and server. The server always re-validates.
-5. Every mutation: `requireRole` → `parse` → service → audit → invalidate tags → typed result.
+1. **Public reads** are cached server loaders under RLS (publishable key). No public content API.
+2. **Admin and guest writes from our own UI** are **Server Actions** (typed, CSRF-protected).
+3. **Route handlers** serve callers that aren't our React forms: OAuth callbacks and the session
+   bridge, cron/webhooks, CLI, browser extension, feeds, OG images, and the **content origin**
+   (files + reader API).
+4. One Zod schema per input; the server always re-validates.
+5. Every mutation: authenticate → authorise (`requireRole` / `requireUser` + ownership) → parse →
+   service → audit (admin) → invalidate tags → typed result.
 
 ## 2. Server Action contract
 
 ```ts
-// design sketch
 type ActionResult<T> =
   | { ok: true; data: T; message?: string }
-  | { ok: false; code: 'VALIDATION' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'INTERNAL';
+  | { ok: false; code: 'VALIDATION' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'INTERNAL';
       message: string; fieldErrors?: Record<string, string[]> };
 ```
 
-- Never throws to the client; unexpected errors are logged to Sentry and returned as `INTERNAL`
-  with a digest ID.
-- `CONFLICT` covers optimistic concurrency: forms send the `updated_at` they loaded; the update
-  includes `where updated_at = $loaded`, and 0 rows → "Someone else changed this; reload".
+Optimistic concurrency on admin forms (`updated_at` match → otherwise `CONFLICT`). Unexpected errors
+go to Sentry and return `INTERNAL` with a digest ID.
 
 ## 3. Server Action catalogue
 
-| Module | Action | Min role | Invalidates |
+### 3.1 Admin (`requireRole`)
+
+| Module | Actions | Min role | Invalidates |
 |---|---|---|---|
-| Profile | `updateProfile`, `setAvailability`, `setCurrentResume` | editor | `profile`, `resume` |
-| Settings | `updateSetting(key, value)`, `reorderSocialLinks`, `upsertSocialLink`, `deleteSocialLink` | editor | `settings` |
-| Media | `createMedia` (after direct upload), `updateMedia`, `replaceMediaFile`, `deleteMedia` (blocked if referenced) | editor | tags of referencing entities |
-| Projects | `createProject`, `updateProject`, `publishProject`, `unpublishProject`, `archiveProject`, `deleteProject`, `reorderProjects`, `setProjectSkills`, `setProjectMedia` | editor | `projects`, `project:{id}` |
-| Experience | `create/update/delete/reorderExperience`, `setExperienceLinks` | editor | `experiences` |
-| Education, Certifications, Achievements | CRUD + reorder | editor | respective tags |
-| Skills | `upsertCategory`, `upsertSkill`, `deleteSkill`, `reorderSkills` | editor | `skills`, `projects` |
-| CP | `upsertCpProfile`, `setCpOverride`, `create/update/delete/reorderContest`, milestones CRUD, `runSync(integration)` | editor | `cp` |
-| Blog | `createPost`, `savePost` (autosave → revision), `publishPost`, `schedulePost`, `unpublishPost`, `deletePost`, `restoreRevision`, `renderPreview(md)`, tags/series CRUD | editor | `posts`, `post:{id}` |
-| Docs | `createRoadmap`, `updateRoadmap`, `importOutline`, `upsertNode`, `moveNode`, `deleteNode` (owner), `publishVersion`, `rollback`, `unpublishNode`, `quickEditFile`, `createPreviewToken`, `setVisibility` (owner) | editor (unless noted) | `docs`, `docs:{id}`, CDN `kb-node:{id}` |
+| Profile & settings | `updateProfile`, `setAvailability`, `setCurrentResume`, `updateSetting`, social links CRUD/reorder | editor | `profile`, `settings`, `resume` |
+| Media | create/update/replace/delete (guarded) | editor | referencing tags |
+| Projects, experience, education, certifications, achievements, skills | CRUD, publish, reorder, relations | editor | respective tags |
+| CP (owner) | `upsertOwnerAccount`, `setOverride`, contests/milestones CRUD, `enqueueSync(accountId)`, `setPlatformEnabled`, `setScrapingEnabled` | editor (platform switches: owner) | `cp` |
+| Bundles (shared) | `createSubject` (roadmap node or post), `saveDraft`, `saveDraftAsVersion`, `publishVersion`, `scheduleVersion`, `unpublish`, `rollback`, `compareVersions`, `createPreviewToken`, `setRuntimeSettings`, `setVisibility` (owner), `purgeVersions` (owner) | editor | `docs:{id}` / `posts` / `post:{id}` + CDN `content:{subjectId}` |
+| Docs | `createRoadmap`, `updateRoadmap`, `importOutline`, `upsertNode`, `moveNode`, `deleteNode` (owner) | editor | `docs`, `docs:{id}` |
+| Blog | post listing metadata (title, excerpt, tags, series, cover, SEO), tags/series CRUD | editor | `posts` |
+| Templates | `saveTemplate`, `setDefaultTemplate` | editor | — |
 | Messages | `setMessageStatus`, `deleteMessage` (owner) | editor | — |
+| Users | `banUser`, `unbanUser`, `deleteUser` (owner) · allowlist: `addAdmin`, `setRole`, `deactivateAdmin` (owner) | owner (list view: editor) | — |
+| Tokens | `createCliToken`, `revokeToken` | owner | — |
 | Redirects | CRUD | editor | `redirects` |
-| Users | `addAdmin`, `setRole`, `deactivateAdmin`, `deleteAuthUser` | **owner** | — |
-| Tokens | `createToken` (returns plaintext once), `revokeToken` | **owner** | — |
-| Public | `sendContactMessage`, `search(q)` | anonymous (rate-limited) | — |
+
+### 3.2 Guest (`requireUser`, own rows only)
+
+| Area | Actions | Notes |
+|---|---|---|
+| Profile | `updateMyProfile` (display name, timezone) | — |
+| Progress | `resetTopicProgress(nodeId)`, `resetRoadmapProgress(roadmapId)` | Typed confirmation in UI |
+| CP | `linkJudgeAccount(platform, handle)` (validates format + existence via adapter, enqueues a `link` job), `unlinkJudgeAccount(id)`, `syncMyAccount(id)` (cooldown), `setPrimaryAccount(id)` | Guests can only create `private` accounts |
+| Extension | `createExtensionToken(name)` (scope `cp:ingest`, 90-day expiry, plaintext shown once), `revokeExtensionToken(id)` | Max 3 active tokens |
+| Account | `exportMyData()` → JSON download, `requestAccountDeletion()`, `signOutEverywhere()` | Deletion revokes sessions/tokens immediately |
+
+### 3.3 Public
+
+`sendContactMessage` (Turnstile + rate limit), `search(q)`.
 
 ## 4. Route handlers
 
-| Method & path | Auth | Request | Response | Notes |
-|---|---|---|---|---|
-| `GET /auth/callback?code&next` | OAuth | — | 302 to `next` | PKCE exchange, next-path validation |
-| `POST /auth/signout` | session | — | 302 `/` | Clears cookies |
-| `POST /api/cron/{job}` | `Bearer CRON_SECRET` | `{}` | `200 {runId, status}` | Jobs: `sync-github`, `sync-codeforces`, `sync-all`, `kb-gc`, `kb-uploads-cleanup` |
-| `POST /api/revalidate` | HMAC header | `{tags: string[]}` | `200 {revalidated}` | Tag allowlist |
-| `POST /api/kb/uploads` | session or token `kb:write` | `{roadmapId, target, bytes, sha256?}` | `200 {uploadUrl, uploadPath, token}` | Signed resumable upload to `kb-uploads` |
-| `POST /api/kb/imports` | session or token `kb:write` | `{roadmapId, uploadPath, kind:'single'\|'tree', target, dryRun, note?}` | `202 {jobId}` | Starts analysis |
-| `POST /api/kb/imports/{id}/step` | same | `{}` | `200 {status, progress, done}` | Processes the next batch (time-boxed) |
-| `GET /api/kb/imports/{id}` | same | — | `200 {status, plan, report, versions}` | Poll |
-| `POST /api/kb/imports/{id}/apply` | same | `{publish?: boolean}` | `202` | Turns a dry-run into an apply |
-| `POST /api/kb/nodes/{id}/publish` | token `kb:publish` | `{versionId}` | `200` | CLI publish |
-| `GET /api/kb/nodes?roadmap=cp` | token `kb:read` | — | `200 [nodes]` | CLI status |
-| `GET /api/kb/versions/{id}/zip` | session or token `kb:read` | — | zip stream | CLI pull / backup |
-| `POST /api/views` | anonymous | `{entity, id}` | `204` | Only if the view counter flag is on |
-| `GET /api/health` | public | — | `200 {ok, db:'ok'}` | No sensitive data |
-| `GET /resume` | public | `?download=1` | PDF | [11 §10](11-content-modules.md) |
-| `GET /feed.xml` · `/atom.xml` · `/feed.json` | public | — | feed | Cached, tag `posts` |
-| `GET /og/{type}/{id}` | public | — | PNG 1200×630 | `next/og`, cached |
-| `GET kb.*/*` | public / preview token | — | bundle file or generated page | [10 §8](10-roadmap-docs-system.md) |
+### 4.1 Main origin
 
-### 4.1 Error envelope (route handlers)
+| Method & path | Auth | Purpose |
+|---|---|---|
+| `GET /auth/callback` | OAuth code | PKCE exchange; routes by role/return |
+| `GET /auth/bridge?return=` | Main-origin session | Mint a one-time code → 303 to the content origin ([08 §5.2](08-auth-and-security.md)) |
+| `POST /auth/signout?return=` | Session | Clear the main session → chain to `read…/__auth/signout` |
+| `POST /api/cron/{job}` | `Bearer CRON_SECRET` | `sync-github`, `cp-scheduler`, `cp-worker`, `bundle-gc`, `bundle-uploads-cleanup`, `blocked-domains`, `account-deletions` |
+| `POST /api/revalidate` | HMAC | Tag revalidation |
+| `POST /api/bundles/uploads` | Admin session or CLI token (`bundle:write`) | Signed resumable upload URL |
+| `POST /api/bundles/imports` · `…/{id}/step` · `GET …/{id}` · `POST …/{id}/apply` | same | Import jobs (single, tree, post) |
+| `POST /api/bundles/subjects/{id}/publish` | CLI token (`bundle:publish`) | CLI publish / schedule |
+| `GET /api/bundles/versions/{id}/zip` | Admin session or `bundle:read` | Download a version |
+| `POST /api/cp/ext/submissions` · `POST /api/cp/ext/bulk` | `Bearer ext_…` (`cp:ingest`) | Extension ingestion ([20 §9](20-cp-multi-platform-tracking.md)) |
+| `POST /api/problem-solving/extension-sync` · `/bulk-import` · `GET /sync-status` · `GET /existing-submissions` | same | **NEUPC-extension compatibility aliases** (`Q-30`) |
+| `POST /api/views` | anonymous, rate-limited | Optional view counter (used by the runtime) |
+| `GET /api/health` | public | Uptime (`select 1`) |
+| `GET /resume` | public | Current CV PDF |
+| `GET /feed.xml`, `/atom.xml`, `/feed.json` | public | Blog feeds (summary + link) |
+| `GET /og/{type}/{id}` | public | OG images |
+| `GET /blog/{slug}` | public | 308 → `read…/blog/{slug}/` |
+
+### 4.2 Content origin (`read.eyasir329.dev`)
+
+| Method & path | Auth | Request → Response |
+|---|---|---|
+| `GET /docs/**`, `/blog/**`, `/` | public | Bundle file / generated page (runtime block injected into entry HTML) |
+| `GET /__rt/runtime.v1.js` | public | Immutable script |
+| `GET /__auth/callback?code&return` | one-time code | Sets `__Host-rt_session` + `rt_signed_in` → 303 `return` |
+| `GET /__auth/signout?return` | session (optional) | Revokes the reader session, clears cookies → 303 |
+| `GET /__api/me` | reader session | `{ signedIn, user: { displayName, avatarUrl }, links: { me, signOut } }` or `{ signedIn: false, links: { signIn } }` |
+| `GET /__api/progress?node={id}` | reader session | `{ keys: { s1: {done:true, at}, p3: {done:true, source:'verified', via:'codeforces'} }, lastAnchor }` |
+| `PUT /__api/progress` | reader session + CSRF headers | `{ node, items: [{ key, done, at }] }` (≤ 100) → `{ applied, rejected[] }`; keys validated against the node |
+| `GET /__api/progress/summary?roadmap={slug}&node={id?}` | reader session | Per-topic `{ sectionsDone, sectionsTotal, practiceDone, practiceVerified, practiceTotal, completedAt }` + `continue: { href, anchor }` |
+| `POST /__api/visit` | reader session | `{ node, anchor }` → 204 (throttled) |
+| `GET /sitemap.xml`, `/robots.txt` | public | Content-origin SEO |
+
+### 4.3 Error envelope (all route handlers)
 
 ```json
-{ "error": { "code": "VALIDATION", "message": "target.segment is required", "details": { "field": "target.segment" } } }
+{ "error": { "code": "VALIDATION", "message": "items[3].key is not a section of this topic", "details": { "index": 3 } } }
 ```
 
-| HTTP | code |
-|---|---|
-| 400 | `VALIDATION`, `BAD_PATH` |
-| 401 | `UNAUTHENTICATED` |
-| 403 | `FORBIDDEN`, `SCOPE` |
-| 404 | `NOT_FOUND` |
-| 409 | `CONFLICT` |
-| 413 | `TOO_LARGE` |
-| 429 | `RATE_LIMITED` (with `Retry-After`) |
-| 500 | `INTERNAL` (with `digest`) |
+400 `VALIDATION`/`BAD_PATH` · 401 `UNAUTHENTICATED` · 403 `FORBIDDEN`/`SCOPE`/`BANNED` · 404
+`NOT_FOUND` · 409 `CONFLICT` · 413 `TOO_LARGE` · 429 `RATE_LIMITED` (+ `Retry-After`) · 500
+`INTERNAL` (+ `digest`).
 
 ## 5. Validation schemas (inventory)
 
-Located in `lib/validation/`, one file per module: `profile.ts`, `settings.ts` (one schema per
-settings key), `media.ts`, `project.ts`, `experience.ts`, `education.ts`, `certification.ts`,
-`skill.ts`, `cp.ts`, `post.ts`, `kb.ts` (roadmap, node, outline YAML, import request, `kb.json`),
-`contact.ts`, `users.ts`, `tokens.ts`. Shared primitives: `slug`, `httpsUrl`, `monthDate`,
-`markdown` (max 200k chars), `mediaRef`, `semverish`, `segment` (`^[A-Za-z0-9._-]+$`).
+`lib/validation/`: `profile`, `settings` (per key), `media`, `project`, `experience`, `education`,
+`certification`, `skill`, `cp` (owner accounts, overrides, contests), `bundle` (subject, upload,
+import, draft overlay, runtime settings, `kb.json`, `post.json`), `roadmap` (outline YAML, node),
+`post` (listing metadata), `contact`, `users`, `tokens`, **`reader`** (progress batch, visit),
+**`judge`** (platform + handle per `cp_platforms.handle_pattern`), **`extension`** (submission
+payloads, NEUPC-compatible shapes). Shared primitives: `slug`, `segment`, `httpsUrl`, `problemKey`,
+`isoDate`.
 
-## 6. Pagination, sorting & filtering
+## 6. Cache tags & invalidation
 
-- Admin lists: `?page=1&per=25&sort=updated_at.desc&status=draft&q=…` → validated by a generic
-  `listQuery` schema; implemented with Supabase `.range()` and `count: 'exact'` (fine at this scale).
-- Public lists: blog `?page=`, projects filter params; canonical keeps `page` only.
+The catalogue lives in `lib/cache/tags.ts` ([06 §3](06-system-architecture.md)). Guest-specific
+pages (`/me/**`) and the reader API are **never cached** (`no-store`). The owner's public CP data
+revalidates `cp` after each owner-account sync; guest syncs never invalidate public tags.
 
 ## 7. Data flow summary
 
 ```mermaid
 flowchart LR
-  subgraph RP["Read path"]
-    RSC["Server Component"] --> L["lib/data loader ('use cache' + tags)"] --> SBa["Supabase (publishable key + RLS)"]
+  subgraph RP["Public read path"]
+    RSC["Server Component"] --> L["cached loader (tags)"] --> SBa["Supabase (publishable key + RLS)"]
   end
-  subgraph WP["Write path"]
-    F["Admin form"] --> SA["Server Action"] --> SV["lib/services"] --> SBu["Supabase (user session + RLS)"]
-    SV --> AU["audit_log"]
+  subgraph WP["Admin and guest write path"]
+    F["Form"] --> SA["Server Action"] --> SV["lib/services"] --> SBu["Supabase (user session + RLS)"]
     SA --> INV["updateTag(...)"]
   end
+  subgraph CO["Content origin"]
+    RT["Reader runtime"] -->|"/__api/* with reader session"| RA["Reader API handler"] --> SVc["services (secret key, validated)"] --> SBs["Supabase"]
+  end
   subgraph BG["Background"]
-    CR["pg_cron"] --> RH["Route handler"] --> SV2["lib/services (secret key)"] --> SBs["Supabase"]
-    RH --> INV2["revalidateTag(...)"]
+    CR["pg_cron"] --> WK["/api/cron/cp-worker"] --> AD["judge adapters"] --> SBs
+    EXT["Browser extension"] -->|"Bearer ext token"| EI["/api/cp/ext/*"] --> SBs
   end
 ```

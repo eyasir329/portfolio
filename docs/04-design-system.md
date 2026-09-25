@@ -1,6 +1,9 @@
 # 04 — Design System: "Marble & Ink"
 
-> Status: **Draft v0.1** · Related: [05 3D](05-3d-experience.md), [02 NFR §2](02-non-functional-requirements.md), [03 IA §5](03-information-architecture.md)
+> Status: **Draft v0.2** · Related: [05 3D](05-3d-experience.md), [02 NFR §2](02-non-functional-requirements.md), [03 IA §5](03-information-architecture.md), [19 Reader panel](19-guest-accounts-and-progress.md)
+>
+> **Revision 0.2:** blog typography now lives in the **"Marble & Ink essay" HTML template** (posts
+> are full HTML). New reader-panel components, account menu, sign-in page and the reader-runtime chip.
 
 ---
 
@@ -19,7 +22,8 @@ composition rather than a tech demo.
 |---|---|
 | **Museum wall label** | Project cards: *Title*, years, *Medium:* stack, one-line description |
 | **Plaster sculpture** | 3D scenes: graph (home), colonnade (CP), plinth (projects), broken column (404) |
-| **Book typography** | Blog: drop cap, sidenotes, ToC in the margin, footnote-style references |
+| **Book typography** | The "Marble & Ink essay" post template: drop cap, sidenotes, ToC in the margin, footnote-style references |
+| **Reader's ledger** | `/me`: progress written like a reading log (dates, sections, ticks), with calm progress bars instead of gamified badges |
 | **Chronicle** | Experience and milestones as a chronology with Roman-numeral year ornaments |
 | **Library / codex** | Docs: roadmaps presented as volumes → chapters (phases) → sections (modules) → topics |
 | **Colophon** | Footer states typefaces, tools and last-updated date, as a book's colophon does |
@@ -146,8 +150,8 @@ body text.
 |---|---|
 | Section numerals | Home and long pages number sections with Roman numerals (I, II, III…) in the kicker; `aria-hidden` on the numeral, with the section name as the accessible heading |
 | Small caps | Kickers and the proof strip use real small caps (`font-variant-caps: all-small-caps`) |
-| Drop cap | First paragraph of a blog post: 3-line drop cap in the serif (`::first-letter`), disabled under 480 px |
-| Sidenotes | Markdown footnotes render in the margin at ≥ 1280 px (Tufte-style) and as inline expandable notes below that |
+| Drop cap | First paragraph of an essay (post template) and of long Markdown pages: 3-line drop cap (`::first-letter`), disabled under 480 px |
+| Sidenotes | Post template: `<aside class="sidenote">` in the margin at ≥ 1280 px (Tufte-style), inline expandable notes below that. Markdown pages render footnotes the same way |
 | Hairline + ornament | Section breaks: a 1 px `--rule` line with an optional centred `§` or `·` ornament in `--faint` |
 | Hanging punctuation | `hanging-punctuation: first` where supported (quotes in pull-quotes) |
 | Captions | Italic serif caption, then a credit line in small sans `--muted` (mirrors the reference bundle's `<figcaption><b>…</b> … <span class="cred">`) |
@@ -180,8 +184,8 @@ body text.
 | `RatingChart` | Line chart (SVG, server-rendered path + client tooltip) | Accessible table toggle |
 | `Heatmap` | 53 × 7 grid, 5 tints of `--text` | Accessible summary text |
 | `ContestRow` | Date · contest · team · rank/total · award | ICPC row visually emphasised |
-| `PostListItem` | Title, date, reading time, tags; table-of-contents styling with dotted leaders | |
-| `Prose` | Markdown renderer styles: headings, lists, quotes, code, tables, figures, callouts, sidenotes | Shared by public pages and the admin preview |
+| `PostListItem` | Title, date, reading time, tags; table-of-contents styling with dotted leaders; links to the post on the content origin | |
+| `Prose` | Markdown renderer styles for site-rendered text (case studies, bio, write-ups, privacy) | Shared by public pages and the admin preview. The same CSS ships inside the essay template, so posts and case studies look related |
 | `CodeBlock` | Shiki dual-theme, filename, line numbers optional, highlight lines, copy button, language tag | Mirrors the reference bundle's copy/lang UX |
 | `Callout` | `note`, `tip`, `warning`, `evidence`: left hairline in the accent + small-caps label | |
 | `Figure` | Image + caption + credit + licence | |
@@ -192,6 +196,15 @@ body text.
 | `ContactForm` | Labels above fields, Turnstile, inline errors | |
 | `Scene3D` | Wrapper that decides poster vs. canvas ([05](05-3d-experience.md)) | |
 | `Colophon` (Footer) | Four columns, see [03 §4.2](03-information-architecture.md) | |
+| `AccountMenu` | "Sign in" text link, or avatar + menu (My progress, CP tracking, Settings, Admin, Sign out) | Quiet by design: the site is a portfolio first |
+| `SignInCard` | Serif title, one-line promise, Google/GitHub buttons (provider marks in monochrome), "what we store" list | `/login` |
+| `ContinueCard` | Last topic + section with a large serif title and a single "Continue" action | `/me` |
+| `ProgressBar` / `ProgressRing` | Hairline track, ink fill, accent only for "completed"; numbers shown as text ("8/13") | No percentages without counts |
+| `RoadmapProgressTree` | The roadmap map with per-topic progress and verified badges | `/me/roadmaps/*`, `/docs/[roadmap]` when signed in |
+| `ActivityCalendar` | 53 × 7 grid in ink tints; streak line in small caps | `/me` |
+| `JudgeCard` | Judge mark, handle, rating (rank colour), solved, status pill (synced / needs extension / failing) | `/me/cp`, `/cp` |
+| `SolvedTable` | Filterable list (judge, tag, difficulty, date) with tabular numbers | `/me/cp` |
+| `RuntimeChip` | Fixed bottom-right pill on content-origin pages; inherits `--paper`, `--ink`, `--accent` from the page if defined, else Marble & Ink tokens; compact/full/hidden modes | Delivered by the reader runtime, not a React component |
 
 ### 6.2 Admin components
 
@@ -199,8 +212,10 @@ Built on **shadcn/ui** (Radix primitives + Tailwind), themed with the same token
 face, with denser spacing. Key pieces: `DataTable` (TanStack Table: server pagination, sort, filter,
 column visibility, bulk actions), `EntityForm` (React Hook Form + Zod), `MarkdownEditor` (CodeMirror 6
 + live `Prose` preview), `MediaPicker`, `SortableList` (dnd-kit), `StatusBadge`, `ConfirmDialog`
-(typed confirmation for destructive actions), `DiffViewer` (KB import dry-run, post revisions),
-`FileTree` (KB bundle browser), `JobLog` (sync/import logs), `Toast` (sonner).
+(typed confirmation for destructive actions), `DiffViewer` (import dry-run, version compare),
+`FileTree` (bundle browser), **`HtmlEditor`** (file tree + CodeMirror HTML/CSS/JS + sandboxed
+preview with device widths), `TemplatePicker`, `JobLog` (sync/import logs), `QueueGauge` (CP queue),
+`PlatformHealthTile`, `Toast` (sonner).
 
 ## 7. Motion
 
@@ -229,14 +244,17 @@ Rules:
 - Errors say what happened and what to do: "Couldn't send — check your connection and try again.
   Nothing was lost."
 
-## 9. Relationship with the KB (content-origin) look
+## 9. Relationship with the content-origin look
 
-Uploaded topic pages keep **their own** CSS (the reference uses system fonts and a blue accent).
-The platform does **not** restyle them. Generated KB pages (roadmap/phase/module index, coming-soon)
-**reuse the roadmap's theme CSS** — extracted from its first published topic's `<style>` block,
-editable in admin — so moving between generated and uploaded pages feels seamless. They also share
-the bundle's theme key (`cpkb-theme` for the CP roadmap, configurable per roadmap). The main site's
-`/docs` catalog and map use Marble & Ink.
+Uploaded topic pages and blog posts keep **their own** CSS (the reference topic uses system fonts
+and a blue accent; posts usually start from the Marble & Ink essay template). The platform does
+**not** restyle them; the only addition is the small runtime chip, which adopts the page's colours.
+
+Generated roadmap pages (root/phase/module index, coming-soon) **reuse the roadmap's theme CSS**,
+extracted from its first published topic's `<style>` block and editable in admin, so moving between
+generated and uploaded pages feels seamless. They also share the bundle's theme key (`cpkb-theme`
+for the CP roadmap, configurable per roadmap). The reading-room home (`read…/`) uses Marble & Ink.
+The main site's `/docs`, `/blog` listings and `/me` use Marble & Ink.
 
 ## 10. Design deliverables before build (Phase 1)
 
@@ -244,6 +262,6 @@ the bundle's theme key (`cpkb-theme` for the CP roadmap, configurable per roadma
 |---|---|
 | Token file (`tokens.css` + Tailwind `@theme`) | Code (Phase 1) |
 | Type specimen page (`/admin/design` — internal) | Code (Phase 1) |
-| Wireframes: Home, Project, CP, Post, Docs map, Admin list + editor | Low-fi (Excalidraw/Figma), attached to the Phase 1 PR |
+| Wireframes: Home, Project, CP, Docs map, `/login`, `/me`, `/me/cp`, Admin list + HTML editor; the "Marble & Ink essay" post template | Low-fi (Excalidraw/Figma), attached to the Phase 1 PR |
 | 3D art-direction still for each scene | Rendered PNG from the prototype spike `SP-05` |
 | Component inventory with states (default, hover, focus, active, disabled, loading, empty, error) | Storybook-lite page in `/admin/design` |

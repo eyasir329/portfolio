@@ -1,9 +1,9 @@
-# Eyasir Ahamed — Portfolio, Blog & Roadmap Docs
+# Eyasir Ahamed — Portfolio, Blog, Roadmap Docs & Learner Tracking
 
-> **Status: Phase 0 — Planning & audit.**
+> **Status: Phase 0 — Planning & audit (revision 0.2).**
 > This repository currently contains **planning documents only**. No application code has been
 > scaffolded, installed or run. Implementation starts after the owner signs off
-> [`docs/19-audit-checklist.md`](docs/19-audit-checklist.md).
+> [`docs/21-audit-checklist.md`](docs/21-audit-checklist.md). What changed: [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 The personal website of **Eyasir Ahamed**: full-stack developer, Computer Science & Engineering
 graduate (Netrokona University) and competitive programmer (ICPC 2025 Asia Dhaka Regionalist,
@@ -14,30 +14,31 @@ Mymensingh Divisional Champion).
 | Area | Summary |
 |---|---|
 | **Portfolio** | Projects, experience, education, skills and certifications, all editable from the admin panel |
-| **CP Journey** | Codeforces and GitHub stats synced daily, ICPC/IUPC contest history, and a 3D "Colonnade" of monthly solves |
-| **Blog** | Markdown essays with code, math, diagrams, series, tags and RSS |
-| **Roadmap Docs** | Public learning roadmaps; each topic is a complete, self-contained HTML page served byte-for-byte (same format as the `3_std_vector` reference bundle) |
-| **Admin panel** | Google sign-in (allowlisted emails only), CRUD for all content, topic-bundle importer, sync controls, audit log |
+| **CP Journey** | The owner's record on **10 judges** (Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph, VJudge), ICPC/IUPC history, and a 3D "Colonnade" of monthly solves |
+| **Blog** | Posts written in **full HTML** (in an admin HTML editor or uploaded), rendered exactly as written, with versions, scheduling, tags, series and feeds |
+| **Roadmap Docs** | Public learning roadmaps; each topic is a self-contained HTML page (same format as the `3_std_vector` reference bundle), served faithfully on an isolated content origin |
+| **Reader accounts** | Sign in with Google or GitHub to **save roadmap progress** (anonymous readers can read but not track) and **track CP progress across the 10 judges**, with roadmap practice problems auto-verified |
+| **Admin panel** | Allowlisted admins only: CRUD for all content, HTML editor and templates, bundle importer + CLI, users and reader analytics, judge sync health, audit log |
 
 ## Planned stack
 
 Next.js 16 (App Router, TypeScript) · React 19 · Tailwind CSS v4 · Three.js via React Three Fiber ·
-Supabase (Postgres, Auth with Google, Storage) · Vercel
+Supabase (Postgres + RLS, Auth with Google/GitHub, Storage, pg_cron) · Vercel
 
 ## Planning documents
 
-Start with **[`docs/README.md`](docs/README.md)**. It gives the reading order, the ID conventions
-and the glossary.
+Start with **[`docs/README.md`](docs/README.md)** (reading order, ID conventions, glossary).
 
 | # | Document | # | Document |
 |--:|---|--:|---|
-| 00 | [Project charter](docs/00-project-charter.md) | 10 | [Roadmap Docs system](docs/10-roadmap-docs-system.md) |
-| 01 | [Product requirements](docs/01-product-requirements.md) | 11 | [Content modules](docs/11-content-modules.md) |
-| 02 | [Non-functional requirements](docs/02-non-functional-requirements.md) | 12 | [Integrations & sync](docs/12-integrations-and-sync.md) |
-| 03 | [Information architecture](docs/03-information-architecture.md) | 13 | [API & data flow](docs/13-api-and-data-flow.md) |
-| 04 | [Design system](docs/04-design-system.md) | 14 | [DevOps & environments](docs/14-devops-and-environments.md) |
-| 05 | [3D experience](docs/05-3d-experience.md) | 15 | [Testing & QA](docs/15-testing-and-qa.md) |
-| 06 | [System architecture](docs/06-system-architecture.md) | 16 | [Delivery plan](docs/16-delivery-plan.md) |
-| 07 | [Database design](docs/07-database-design.md) | 17 | [Risks & decisions (ADRs)](docs/17-risks-and-decisions.md) |
-| 08 | [Auth & security](docs/08-auth-and-security.md) | 18 | [Content inventory](docs/18-content-inventory.md) |
-| 09 | [Admin panel](docs/09-admin-panel.md) | 19 | [Audit checklist & open questions](docs/19-audit-checklist.md) |
+| 00 | [Project charter](docs/00-project-charter.md) | 11 | [Content modules (incl. HTML blog)](docs/11-content-modules.md) |
+| 01 | [Product requirements](docs/01-product-requirements.md) | 12 | [Integrations & sync](docs/12-integrations-and-sync.md) |
+| 02 | [Non-functional requirements](docs/02-non-functional-requirements.md) | 13 | [API & data flow](docs/13-api-and-data-flow.md) |
+| 03 | [Information architecture](docs/03-information-architecture.md) | 14 | [DevOps & environments](docs/14-devops-and-environments.md) |
+| 04 | [Design system](docs/04-design-system.md) | 15 | [Testing & QA](docs/15-testing-and-qa.md) |
+| 05 | [3D experience](docs/05-3d-experience.md) | 16 | [Delivery plan](docs/16-delivery-plan.md) |
+| 06 | [System architecture](docs/06-system-architecture.md) | 17 | [Risks & decisions (ADRs)](docs/17-risks-and-decisions.md) |
+| 07 | [Database design](docs/07-database-design.md) | 18 | [Content inventory](docs/18-content-inventory.md) |
+| 08 | [Auth & security](docs/08-auth-and-security.md) | 19 | [Guest accounts, reader panel & progress](docs/19-guest-accounts-and-progress.md) |
+| 09 | [Admin panel](docs/09-admin-panel.md) | 20 | [CP tracking on 10 judges](docs/20-cp-multi-platform-tracking.md) |
+| 10 | [Content origin, bundle engine & Roadmap Docs](docs/10-roadmap-docs-system.md) | 21 | [Audit checklist & open questions](docs/21-audit-checklist.md) |
