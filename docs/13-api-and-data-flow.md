@@ -1,6 +1,6 @@
 # 13 — API & Data Flow
 
-> Status: **Draft v0.2** · Related: [03 §3.3–3.4](03-information-architecture.md), [06 §3–4](06-system-architecture.md), [08 §4–5](08-auth-and-security.md), [10 §6–8](10-roadmap-docs-system.md), [19](19-guest-accounts-and-progress.md), [20](20-cp-multi-platform-tracking.md)
+> Status: **Draft v0.3** · Related: [03 §3.3–3.4](03-information-architecture.md), [06 §3–4](06-system-architecture.md), [08 §4–5](08-auth-and-security.md), [10 §6–8](10-roadmap-docs-system.md), [19](19-guest-accounts-and-progress.md), [20](20-cp-multi-platform-tracking.md)
 
 ---
 
@@ -9,7 +9,7 @@
 1. **Public reads** are cached server loaders under RLS (publishable key). No public content API.
 2. **Admin and guest writes from our own UI** are **Server Actions** (typed, CSRF-protected).
 3. **Route handlers** serve callers that aren't our React forms: OAuth callbacks and the session
-   bridge, cron/webhooks, CLI, browser extension, feeds, OG images, and the **content origin**
+   bridge, cron/webhooks, CLI, the owner's browser extension, feeds, OG images, and the **content origin**
    (files + reader API).
 4. One Zod schema per input; the server always re-validates.
 5. Every mutation: authenticate → authorise (`requireRole` / `requireUser` + ownership) → parse →
@@ -36,14 +36,14 @@ go to Sentry and return `INTERNAL` with a digest ID.
 | Profile & settings | `updateProfile`, `setAvailability`, `setCurrentResume`, `updateSetting`, social links CRUD/reorder | editor | `profile`, `settings`, `resume` |
 | Media | create/update/replace/delete (guarded) | editor | referencing tags |
 | Projects, experience, education, certifications, achievements, skills | CRUD, publish, reorder, relations | editor | respective tags |
-| CP (owner) | `upsertOwnerAccount`, `setOverride`, contests/milestones CRUD, `enqueueSync(accountId)`, `setPlatformEnabled`, `setScrapingEnabled` | editor (platform switches: owner) | `cp` |
+| CP (owner) | `upsertOwnerAccount`, `setOverride`, contests/milestones CRUD, `runPlatformSync(platform)`, `setPlatformEnabled`, `setScrapingEnabled` | editor (platform switches: owner) | `cp` |
 | Bundles (shared) | `createSubject` (roadmap node or post), `saveDraft`, `saveDraftAsVersion`, `publishVersion`, `scheduleVersion`, `unpublish`, `rollback`, `compareVersions`, `createPreviewToken`, `setRuntimeSettings`, `setVisibility` (owner), `purgeVersions` (owner) | editor | `docs:{id}` / `posts` / `post:{id}` + CDN `content:{subjectId}` |
 | Docs | `createRoadmap`, `updateRoadmap`, `importOutline`, `upsertNode`, `moveNode`, `deleteNode` (owner) | editor | `docs`, `docs:{id}` |
 | Blog | post listing metadata (title, excerpt, tags, series, cover, SEO), tags/series CRUD | editor | `posts` |
 | Templates | `saveTemplate`, `setDefaultTemplate` | editor | — |
 | Messages | `setMessageStatus`, `deleteMessage` (owner) | editor | — |
 | Users | `banUser`, `unbanUser`, `deleteUser` (owner) · allowlist: `addAdmin`, `setRole`, `deactivateAdmin` (owner) | owner (list view: editor) | — |
-| Tokens | `createCliToken`, `revokeToken` | owner | — |
+| Tokens | `createToken(name, scopes)` (bundle CLI and/or `cp:ingest` for the owner's extension), `revokeToken` | owner | — |
 | Redirects | CRUD | editor | `redirects` |
 
 ### 3.2 Guest (`requireUser`, own rows only)
@@ -52,9 +52,7 @@ go to Sentry and return `INTERNAL` with a digest ID.
 |---|---|---|
 | Profile | `updateMyProfile` (display name, timezone) | — |
 | Progress | `resetTopicProgress(nodeId)`, `resetRoadmapProgress(roadmapId)` | Typed confirmation in UI |
-| CP | `linkJudgeAccount(platform, handle)` (validates format + existence via adapter, enqueues a `link` job), `unlinkJudgeAccount(id)`, `syncMyAccount(id)` (cooldown), `setPrimaryAccount(id)` | Guests can only create `private` accounts |
-| Extension | `createExtensionToken(name)` (scope `cp:ingest`, 90-day expiry, plaintext shown once), `revokeExtensionToken(id)` | Max 3 active tokens |
-| Account | `exportMyData()` → JSON download, `requestAccountDeletion()`, `signOutEverywhere()` | Deletion revokes sessions/tokens immediately |
+| Account | `exportMyData()` → JSON download (profile + reading progress), `requestAccountDeletion()`, `signOutEverywhere()` | Deletion revokes sessions immediately |
 
 ### 3.3 Public
 
@@ -69,13 +67,13 @@ go to Sentry and return `INTERNAL` with a digest ID.
 | `GET /auth/callback` | OAuth code | PKCE exchange; routes by role/return |
 | `GET /auth/bridge?return=` | Main-origin session | Mint a one-time code → 303 to the content origin ([08 §5.2](08-auth-and-security.md)) |
 | `POST /auth/signout?return=` | Session | Clear the main session → chain to `read…/__auth/signout` |
-| `POST /api/cron/{job}` | `Bearer CRON_SECRET` | `sync-github`, `cp-scheduler`, `cp-worker`, `bundle-gc`, `bundle-uploads-cleanup`, `blocked-domains`, `account-deletions` |
+| `POST /api/cron/{job}` | `Bearer CRON_SECRET` | `sync-github`, `sync-cp?platform=…` (10 staggered jobs), `bundle-gc`, `bundle-uploads-cleanup`, `blocked-domains`, `account-deletions` |
 | `POST /api/revalidate` | HMAC | Tag revalidation |
 | `POST /api/bundles/uploads` | Admin session or CLI token (`bundle:write`) | Signed resumable upload URL |
 | `POST /api/bundles/imports` · `…/{id}/step` · `GET …/{id}` · `POST …/{id}/apply` | same | Import jobs (single, tree, post) |
 | `POST /api/bundles/subjects/{id}/publish` | CLI token (`bundle:publish`) | CLI publish / schedule |
 | `GET /api/bundles/versions/{id}/zip` | Admin session or `bundle:read` | Download a version |
-| `POST /api/cp/ext/submissions` · `POST /api/cp/ext/bulk` | `Bearer ext_…` (`cp:ingest`) | Extension ingestion ([20 §9](20-cp-multi-platform-tracking.md)) |
+| `POST /api/cp/ext/submissions` · `POST /api/cp/ext/bulk` | Owner token (`cp:ingest`) | The owner's extension ingestion ([20 §7](20-cp-multi-platform-tracking.md)) |
 | `POST /api/problem-solving/extension-sync` · `/bulk-import` · `GET /sync-status` · `GET /existing-submissions` | same | **NEUPC-extension compatibility aliases** (`Q-30`) |
 | `POST /api/views` | anonymous, rate-limited | Optional view counter (used by the runtime) |
 | `GET /api/health` | public | Uptime (`select 1`) |
@@ -93,7 +91,7 @@ go to Sentry and return `INTERNAL` with a digest ID.
 | `GET /__auth/callback?code&return` | one-time code | Sets `__Host-rt_session` + `rt_signed_in` → 303 `return` |
 | `GET /__auth/signout?return` | session (optional) | Revokes the reader session, clears cookies → 303 |
 | `GET /__api/me` | reader session | `{ signedIn, user: { displayName, avatarUrl }, links: { me, signOut } }` or `{ signedIn: false, links: { signIn } }` |
-| `GET /__api/progress?node={id}` | reader session | `{ keys: { s1: {done:true, at}, p3: {done:true, source:'verified', via:'codeforces'} }, lastAnchor }` |
+| `GET /__api/progress?node={id}` | reader session | `{ keys: { s1: {done:true, at}, p3: {done:true, at} }, lastAnchor }` |
 | `PUT /__api/progress` | reader session + CSRF headers | `{ node, items: [{ key, done, at }] }` (≤ 100) → `{ applied, rejected[] }`; keys validated against the node |
 | `GET /__api/progress/summary?roadmap={slug}&node={id?}` | reader session | Per-topic `{ sectionsDone, sectionsTotal, practiceDone, practiceVerified, practiceTotal, completedAt }` + `continue: { href, anchor }` |
 | `POST /__api/visit` | reader session | `{ node, anchor }` → 204 (throttled) |
@@ -115,7 +113,7 @@ go to Sentry and return `INTERNAL` with a digest ID.
 `certification`, `skill`, `cp` (owner accounts, overrides, contests), `bundle` (subject, upload,
 import, draft overlay, runtime settings, `kb.json`, `post.json`), `roadmap` (outline YAML, node),
 `post` (listing metadata), `contact`, `users`, `tokens`, **`reader`** (progress batch, visit),
-**`judge`** (platform + handle per `cp_platforms.handle_pattern`), **`extension`** (submission
+**`judge`** (owner accounts: platform + handle per `cp_platforms.handle_pattern`), **`extension`** (submission
 payloads, NEUPC-compatible shapes). Shared primitives: `slug`, `segment`, `httpsUrl`, `problemKey`,
 `isoDate`.
 
@@ -123,7 +121,7 @@ payloads, NEUPC-compatible shapes). Shared primitives: `slug`, `segment`, `https
 
 The catalogue lives in `lib/cache/tags.ts` ([06 §3](06-system-architecture.md)). Guest-specific
 pages (`/me/**`) and the reader API are **never cached** (`no-store`). The owner's public CP data
-revalidates `cp` after each owner-account sync; guest syncs never invalidate public tags.
+revalidates `cp` after each platform sync.
 
 ## 7. Data flow summary
 
@@ -140,7 +138,7 @@ flowchart LR
     RT["Reader runtime"] -->|"/__api/* with reader session"| RA["Reader API handler"] --> SVc["services (secret key, validated)"] --> SBs["Supabase"]
   end
   subgraph BG["Background"]
-    CR["pg_cron"] --> WK["/api/cron/cp-worker"] --> AD["judge adapters"] --> SBs
-    EXT["Browser extension"] -->|"Bearer ext token"| EI["/api/cp/ext/*"] --> SBs
+    CR["pg_cron"] --> WK["/api/cron/sync-cp per platform"] --> AD["judge adapters"] --> SBs
+    EXT["Owner browser extension"] -->|"Bearer owner token"| EI["/api/cp/ext/*"] --> SBs
   end
 ```

@@ -1,10 +1,13 @@
 # 08 — Authentication, Authorisation & Security
 
-> Status: **Draft v0.2** · Related: [07 DB §6–8](07-database-design.md), [06 §5](06-system-architecture.md), [10 §8](10-roadmap-docs-system.md), [19 Guest accounts](19-guest-accounts-and-progress.md), [20 §9 Extension](20-cp-multi-platform-tracking.md), [02 NFR-SEC](02-non-functional-requirements.md)
+> Status: **Draft v0.3** · Related: [07 DB §6–8](07-database-design.md), [06 §5](06-system-architecture.md), [10 §8](10-roadmap-docs-system.md), [19 Guest accounts](19-guest-accounts-and-progress.md), [20 §7 Extension](20-cp-multi-platform-tracking.md), [02 NFR-SEC](02-non-functional-requirements.md)
 >
 > **Revision 0.2:** sign-up is **open to guests** (Google, GitHub); admin rights still come only from
 > the allowlist. The content origin gets its own **reader session** via a one-time-code bridge. Blog
-> posts join topics as untrusted-HTML-on-an-isolated-origin. New: extension tokens and guest privacy.
+> posts join topics as untrusted-HTML-on-an-isolated-origin. New: guest privacy.
+>
+> **Revision 0.3:** learner CP tracking removed, so guests hold **no tokens** and have no CP data;
+> extension tokens (`cp:ingest`) are admin-only, for the owner's own submissions.
 
 ---
 
@@ -12,7 +15,7 @@
 
 - **Anyone** can create a **guest** account with Google or GitHub. **Admin rights** (`owner`,
   `editor`) come only from an active row in `admin_users`.
-- **Anonymous visitors** read everything public; progress and CP tracking need an account.
+- **Anonymous visitors** read everything public; roadmap progress needs an account.
 - **Defence in depth for admin:** `proxy.ts` → admin layout → every server action/route handler →
   RLS (`private.is_admin()` checks the table on every query, so revocation is instant).
 - **Guest data isolation:** every user-owned table has RLS `user_id = auth.uid()`; guest writes to
@@ -82,10 +85,9 @@ sequenceDiagram
 |---|:-:|:-:|:-:|:-:|
 | Read public content | ✅ | ✅ | ✅ | ✅ |
 | Save roadmap progress; `/me`; export/delete own data | ❌ | ✅ | ✅ | ✅ |
-| Link judge accounts; CP tracking; extension token (`cp:ingest`) | ❌ | ✅ | ✅ | ✅ |
 | Admin panel: content, bundles, messages, sync, settings | ❌ | ❌ | ✅ | ✅ |
 | Users: view list | ❌ | ❌ | ✅ | ✅ |
-| Users: ban/unban, delete; allowlist & roles; CLI tokens; security settings; purge bundles | ❌ | ❌ | ❌ | ✅ |
+| Users: ban/unban, delete; allowlist & roles; API tokens (bundle CLI, CP extension); security settings; purge bundles | ❌ | ❌ | ❌ | ✅ |
 
 ### 4.2 Enforcement layers
 
@@ -198,11 +200,11 @@ payment=(), usb=()` · COOP (`same-origin` main; `same-origin-allow-popups` cont
 | S2 | Stolen admin cookie | Admin | Host-only cookies; no author JS on the main origin; strict admin CSP | Low |
 | S3 | **Account takeover of a guest** via the bridge (code theft, open redirect) | Guest data | 60 s single-use codes bound to user + return URL; return URL allowlist; HTTPS only | Low |
 | T1 | Zip slip / zip bomb in bundles | Storage/functions | Path normalisation, CAS writes, streaming limits | Very low |
-| T2 | **Forged progress or solves** (a user writes others' rows) | Integrity | Writes only through validated endpoints; RLS own-rows; keys validated against the node | Low |
-| T3 | **Fake solves via the extension** | Integrity (private stats) | Token scoped `cp:ingest`; only the user's linked handles; source marked `extension`; public stats use API data only | Low (self-harm only) |
+| T2 | **Forged progress** (a user writes others' rows) | Integrity | Writes only through validated endpoints; RLS own-rows; keys validated against the node | Low |
+| T3 | **Stolen owner extension token** used to inject fake solves on the public CP page | Integrity | Admin-only token, scoped `cp:ingest`, expiring, revocable; only the owner's handles accepted; source marked `extension` | Low |
 | R1 | "Who published/banned this?" | Integrity | `audit_log` | Low |
 | I1 | Drafts leak | Content | RLS; signed previews | Low |
-| I2 | **Guest personal data exposure** (emails, progress, handles) | Privacy | RLS own-rows; admin sees aggregates for progress; exports only to the owner of the data; no public profiles | Low |
+| I2 | **Guest personal data exposure** (emails, reading progress) | Privacy | RLS own-rows; admin sees aggregates for progress; exports only to the owner of the data; no public profiles | Low |
 | I3 | Secret key in the client bundle | Everything | Server-only modules; CI grep | Low |
 | I4 | Copyrighted `data/` excerpts published | Legal | Private by default (`Q-14`) | Medium until decided |
 | D1 | Contact spam | Inbox | Turnstile + rate limits | Low |
@@ -216,8 +218,8 @@ payment=(), usb=()` · COOP (`same-origin` main; `same-origin-allow-popups` cont
 - Zod everywhere (shared schemas); URLs limited to `https:`, `mailto:`, `tel:` and relative.
 - **Reader API:** keys must be in the node's current `section_keys ∪ practice_keys`; batch ≤ 100
   items; timestamps clamped to server time.
-- **Judge handles:** validated against `cp_platforms.handle_pattern`; existence checked through the
-  adapter before saving.
+- **Judge handles** (owner accounts, admin only): validated against `cp_platforms.handle_pattern`;
+  existence checked through the adapter before saving.
 - **Extension payloads:** size-limited; verdict normalised; timestamps sanity-checked; unknown
   platforms rejected.
 - Media uploads: MIME sniffed; SVG sanitised (main origin). Bundle SVGs served as-is on the
@@ -230,8 +232,8 @@ payment=(), usb=()` · COOP (`same-origin` main; `same-origin-allow-popups` cont
 | Contact form | 5/h, 20/day per IP hash |
 | Reader API writes | 120/min per session (batched client) |
 | `/auth/bridge` | 20/min per user |
-| CP "Sync now" | 1 per account per 30 min; 10 per user per hour |
-| Extension ingestion | 600 submissions/min per token |
+| CP "Run now" (admin) | 1 per platform per 10 min |
+| Extension ingestion (owner token) | 600 submissions/min |
 | CLI | 60 req/min per token |
 | Search | 30/min per IP hash |
 

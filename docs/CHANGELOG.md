@@ -1,5 +1,22 @@
 # Planning Changelog
 
+## Revision 0.3 — 2026-09-25
+
+Requested by the owner: **no CP progress tracking for learners.**
+
+| Area | Revision 0.2 | Now (0.3) | Where |
+|---|---|---|---|
+| Learner CP tracking | Guests link handles on 10 judges, `/me/cp` hub, extension tokens, auto-verified practice | **Removed.** FR-CPT withdrawn (kept as one "Won't" row for traceability); persona P-06, journey J-6 and stories US-083/084 dropped | 01, 19, 20 |
+| Owner CP tracking | Shared multi-tenant engine | **Kept for the owner only**: 10 judges feed the public CP Journey page | 20, 11 §6 |
+| Sync orchestration | DB job queue + worker every minute | **One daily pg_cron run per platform**, advisory lock, resumable cursors, "Run now" (ADR-019 revised) | 20 §5, 12, 06 §6.5, 07 §9 |
+| Roadmap practice | Auto-verified from judge solves | Readers tick practice problems themselves (still part of roadmap progress) | 10, 19 |
+| Browser extension | Guests' personal tokens | The owner's extension only, admin-only `cp:ingest` token | 20 §7, 08, 13 |
+| Database | Per-user `cp_accounts`, `cp_sync_jobs`, `bundle_practice_items`, progress `source` | Owner-only CP tables; queue, practice items and verification removed; guest data = reading progress | 07 |
+| Reader panel | `/me`, `/me/roadmaps`, `/me/cp`, `/me/extension`, `/me/settings` | `/me`, `/me/roadmaps`, `/me/settings` | 03, 19 |
+| Delivery | ≈ 142 dev-days | **≈ 135 dev-days** (US-159, US-218, US-219 removed; others trimmed); P6 no longer depends on P5 | 16 |
+| Risks & questions | R-13, R-19, R-21 medium | Downgraded; Q-23, Q-30 reworded; Q-35 withdrawn | 17, 21 |
+| Tests | T-RT-06, T-CPT-03…06, T-GU-02/03, T-DB-13, UAT-09/10 covered learner CP | Replaced by reset-progress, run-lock, resumable-backfill, owner-extension and admin-only-token tests | 15 |
+
 ## Revision 0.2 — 2026-09-25
 
 Requested by the owner: (1) blog content is written in HTML and must render in full; (2) a guest user

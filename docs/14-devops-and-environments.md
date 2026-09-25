@@ -1,9 +1,12 @@
 # 14 — DevOps, Environments & Operations
 
-> Status: **Draft v0.2** · Related: [06 Architecture](06-system-architecture.md), [08 §11 Secrets](08-auth-and-security.md), [15 QA](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
+> Status: **Draft v0.3** · Related: [06 Architecture](06-system-architecture.md), [08 §11 Secrets](08-auth-and-security.md), [15 QA](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
 >
 > **Revision 0.2:** content origin `read.`; GitHub OAuth; reader runtime build; CP worker and judge
 > monitoring; guest-data runbooks; revised capacity and cost triggers.
+>
+> **Revision 0.3:** no CP queue/worker (owner-only daily runs per platform); guest data is reading
+> progress only.
 
 ---
 
@@ -90,7 +93,7 @@ Scheduled workflows: **nightly backup** (§7), **weekly integration-contract che
 | Web vitals | Vercel Speed Insights | Weekly review; regression → issue |
 | Traffic | Vercel Web Analytics | — |
 | Sync health | `sync_runs` (GitHub, scheduler) + owner accounts | Email after 3 consecutive failures |
-| **Judge platforms** | `cp_platforms.health`, queue depth and oldest-job age | Email when a platform's success rate < 50% over 6 h, or the oldest queued job is > 2 h old |
+| **Judge platforms** | `cp_platforms.health` and `sync_runs` per platform | Email after 3 consecutive failed runs of a platform |
 | **Reader API** | Sentry + route metrics (`/__api/*` error rate, p95) | Alert when error rate > 2% for 15 min |
 | Quotas | Supabase usage page (DB size, storage, egress); Vercel usage | Monthly check in the ops checklist; alert thresholds at 70% |
 | Bundle imports | `bundle_import_jobs` failed status | Shown on the dashboard |
@@ -130,8 +133,8 @@ Scheduled workflows: **nightly backup** (§7), **weekly integration-contract che
 
 | Service | Launch plan | Cost | Upgrade trigger | Next plan |
 |---|---|---|---|---|
-| Vercel | Hobby | $0 | Commercial use, team members, > 70% of function invocations/CPU (the every-minute CP worker ≈ 43k invocations/month plus reader-API calls), image-optimisation quota | Pro ($20/mo) |
-| Supabase | Free × 2 projects | $0 | DB > 350 MB (guest `cp_solves`/progress are the main driver), storage > 700 MB, egress > 70%, MAU > 35k, or need for PITR/daily backups/no pausing | Pro ($25/mo, production only) |
+| Vercel | Hobby | $0 | Commercial use, team members, > 70% of function invocations/CPU (mostly reader-API calls; CP sync is ~10 runs/day), image-optimisation quota | Pro ($20/mo) |
+| Supabase | Free × 2 projects | $0 | DB > 350 MB (guest reading progress is the main driver), storage > 700 MB, egress > 70%, MAU > 35k, or need for PITR/daily backups/no pausing | Pro ($25/mo, production only) |
 | Domain | `.dev` | ~$12–15/yr | — | — |
 | Resend | Free (3,000 emails/mo) | $0 | Guest notices (inactivity, incidents) approach the quota | Paid tier |
 | CLIST.by (optional) | Free API key | $0 | — | — |

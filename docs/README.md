@@ -1,19 +1,20 @@
 # Planning Documentation — Index
 
-> **Document set version:** 0.2 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
+> **Document set version:** 0.3 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
 > **Owner / Product Owner:** Eyasir Ahamed · **Prepared as:** business analysis & system design, pre-implementation
 
 This folder is the single source of truth for **what** will be built, **why**, and **how** it will be
 built, operated and verified. Nothing has been implemented yet. Every document can be checked by
 hand before code exists.
 
-**Revision 0.2 in one paragraph:**
+**Where the plan stands (revision 0.3):**
 - Blog posts are **full HTML**, rendered exactly as written on the content origin, and authored in
   an admin HTML editor or uploaded.
 - Readers can create **guest accounts** (Google/GitHub). **Roadmap progress is saved only for
-  signed-in readers**; anonymous readers can read but not track.
-- Guests (and the owner) can track **competitive-programming progress on 10 judges**: Codeforces,
-  AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph and VJudge.
+  signed-in readers**; anonymous readers can read but not track. **Learners get no CP tracking**
+  (removed in 0.3).
+- The **owner's** competitive-programming record is synced from **10 judges** (Codeforces, AtCoder,
+  LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph, VJudge) for the public CP Journey page.
 
 ---
 
@@ -41,7 +42,7 @@ hand before code exists.
 | 18 | [17 — Risks & decisions](17-risks-and-decisions.md) | Risk register and ADRs |
 | 19 | [18 — Content inventory](18-content-inventory.md) | CV data mapping, missing content |
 | 20 | [19 — Guest accounts, reader panel & progress](19-guest-accounts-and-progress.md) | **New:** sign-in, `/me`, sign-in-gated progress, reader runtime, privacy |
-| 21 | [20 — CP tracking on 10 judges](20-cp-multi-platform-tracking.md) | **New:** judge capability matrix, adapters, queue, extension, auto-verified practice |
+| 21 | [20 — CP tracking (owner, 10 judges)](20-cp-multi-platform-tracking.md) | **New:** judge capability matrix, adapters, daily per-platform runs, the owner's extension |
 | 22 | [21 — Audit checklist](21-audit-checklist.md) | **Sign-off sheet and the decisions only you can make** |
 
 **30-minute path:** CHANGELOG → 00 → 01 §3.7–3.11 → 19 §1–3 → 20 §2 → 21 §3.
@@ -54,7 +55,7 @@ hand before code exists.
 |---|---|---|---|
 | `G-nn` | Business goal | 00 | `G-08` Learner engagement |
 | `A-nn` | Assumption | 00 | `A-07` Judges keep their endpoints |
-| `P-nn` | Persona | 01 | `P-06` Competitive programmer (guest) |
+| `P-nn` | Persona | 01 | `P-03` CS student / CP learner |
 | `FR-<AREA>-nn` | Functional requirement | 01 | `FR-PROG-01` Anonymous is read-only |
 | `US-nnn` | User story | 01, 16 | `US-081` Sign in from a topic |
 | `NFR-<AREA>-nn` | Non-functional requirement | 02 | `NFR-PERF-13` Runtime size |
@@ -87,11 +88,10 @@ Superseded.
 | **Guest** | Any signed-in user without admin rights |
 | **Reader session** | The narrow, HttpOnly session on the content origin, created via the one-time-code **bridge** |
 | **Progress keys** | The bundle's own storage keys (e.g. `cpkb-010114-s4`); the server stores the suffix (`s4`) per user and node |
-| **Verified practice** | A roadmap practice problem marked solved because the reader's linked judge account shows an accepted solution |
-| **Canonical problem key** | `{judge}:{id}`, e.g. `codeforces:704A`, used to dedupe solves and match practice links |
+| **Canonical problem key** | `{judge}:{id}`, e.g. `codeforces:704A`, used to dedupe the owner's solves across judges |
 | **Judge adapter** | Code that reads one judge (API, community API or public profile page) |
 | **Needs extension** | A judge whose per-problem history isn't public; the browser extension provides it |
-| **Extension token** | A personal `cp:ingest` token a guest gives to the browser extension |
+| **Extension token** | An admin-only `cp:ingest` token the owner gives to their browser extension |
 | **Serial** | Topic code in a bundle's kicker, e.g. `01.01.14` |
 | **Generated page** | Roadmap index / coming-soon page rendered by the platform |
 | **RLS** | Postgres Row Level Security |

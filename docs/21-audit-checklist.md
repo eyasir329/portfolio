@@ -1,7 +1,7 @@
 # 21 — Audit Checklist, Open Questions & Sign-off
 
-> Status: **Awaiting owner audit (revision 0.2)** · This is the gate between planning (P0) and
-> building (P1). Nothing is implemented until this page is signed. What changed since 0.1:
+> Status: **Awaiting owner audit (revision 0.3)** · This is the gate between planning (P0) and
+> building (P1). Nothing is implemented until this page is signed. What changed across revisions:
 > [CHANGELOG](CHANGELOG.md).
 
 ---
@@ -39,13 +39,13 @@
 | 17 | Risks & ADRs | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | 18 | Content inventory | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | 19 | Guest accounts, reader panel & progress | ☐ ✅ ☐ ✎ ☐ ❌ | |
-| 20 | CP tracking (10 judges) | ☐ ✅ ☐ ✎ ☐ ❌ | |
+| 20 | CP tracking (owner, 10 judges) | ☐ ✅ ☐ ✎ ☐ ❌ | |
 
 **Final approval:** ☐ Approved to start Phase 1 · Name: ____________ · Date: ____________
 
 ## 3. Decisions only the owner can make
 
-Questions marked **(new)** or **(changed)** come from revision 0.2.
+Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3.
 
 | ID | Question | Options | Recommended default | Answer |
 |---|---|---|---|---|
@@ -67,30 +67,30 @@ Questions marked **(new)** or **(changed)** come from revision 0.2.
 | Q-16 | Serve `assets/src/` originals? | serve / private / strip | Private | |
 | Q-17 | YouTube thumbnails: local or hotlink? | local / hotlink | Local | |
 | Q-18 | Name teammates on contests? | names / team only | Team only unless they agree | |
-| Q-19 **(changed)** | Delivery ordering ([16 §1](16-delivery-plan.md)) | A complete / B readers first / C portfolio first | **B: readers first** (v1 ≈ 22 weeks; CP tracking and 3D as v1.1) | |
+| Q-19 **(changed)** | Delivery ordering ([16 §1](16-delivery-plan.md)) | A complete / B readers first / C portfolio first | **B: readers first** (v1 ≈ 21 weeks; owner CP tracking and 3D as v1.1) | |
 | Q-20 **(changed)** | Blog at launch? | ≥ 1 HTML post at launch / enable later | ≥ 1 post (the editor makes it cheap) | |
 | Q-21 | Comments on posts | yes / no | No at launch (Giscus via template later) | |
 | Q-22 | 3D scope | S1 / S1+S2+S4 / all | S1 + S2 + S4 | |
-| Q-23 **(changed)** | Confirm: visitors can read everything without an account; **only progress and CP tracking need sign-in** | confirm / change | Confirm | |
+| Q-23 **(changed)** | Confirm: visitors can read everything without an account; **only roadmap progress needs sign-in** (learners get no CP tracking) | confirm / change | Confirm | |
 | Q-24 | Will someone else ever be an editor? | yes / no | Keep the role; nobody assigned | |
 | Q-25 | Budget ceiling if free tiers run out | $0 / ≤ $25 / ≤ $50 per month | ≤ $25 (Supabase Pro for production first) | |
 | Q-26 **(new)** | Guest sign-in providers | Google only / Google + GitHub / + email magic link | **Google + GitHub** | |
 | Q-27 **(new)** | Where do blog posts live? | content origin (`read…/blog/{slug}/`, main-domain URL redirects) / iframe inside the main site | **Content origin + redirect** (security and exact rendering) | |
 | Q-28 **(new)** | Feed content | summary + link / sanitised full text | **Summary + link** (scripts/styles can't work in feed readers) | |
 | Q-29 **(new)** | Enable HTML-scraping adapters (CodeChef, LightOJ, SPOJ, CSES, Toph profile pages)? | all / some / none (extension only) | **Enable at low frequency with kill switches**; drop any judge that objects | |
-| Q-30 **(new)** | Browser extension for LeetCode/CSES/LightOJ/SPOJ/CodeChef history | reuse the NEUPC extension (configurable API URL + compatible endpoints) / fork a slim extension / none | **Reuse NEUPC's** (SP-10 confirms) | |
+| Q-30 **(new)** | Browser extension for **your own** LeetCode/CSES/LightOJ/SPOJ/CodeChef history | reuse the NEUPC extension (configurable API URL + compatible endpoints) / fork a slim extension / none | **Reuse NEUPC's** (SP-10 confirms) | |
 | Q-31 **(new)** | Use CLIST.by API as a fallback? | yes (needs a free key) / no | No at launch; revisit if CodeChef data is poor | |
 | Q-32 **(new)** | Public learner profiles or leaderboards? | no / later | **No** (privacy; would need handle verification) | |
 | Q-33 **(new)** | Anonymous readers: disable progress completely (even local)? | fully disabled / local-only allowed | **Fully disabled** (as requested) | |
 | Q-34 **(new)** | Inactive-account policy | delete after 24 months (+ 30-day notice) / keep | 24 months + notice | |
-| Q-35 **(new)** | Require CP handle verification? | no / only for public features | Not for private tracking | |
+| Q-35 **(withdrawn in 0.3)** | ~~Require CP handle verification?~~ Not applicable: learners have no CP tracking | — | — | n/a |
 | Q-36 **(new)** | Edit topics in the admin HTML editor at v1? | yes / later | Yes (same editor as the blog; quick fixes without re-uploading) | |
 
 ## 4. Area checklists
 
 ### 00 Charter & 01 PRD
 - [ ] The vision now includes learners tracking their journey; goals G-08/G-09 are right
-- [ ] Priorities of FR-BLOG, FR-PROG, FR-GUEST and FR-CPT match what I want at launch
+- [ ] Priorities of FR-BLOG, FR-PROG and FR-GUEST match what I want at launch; FR-CPT is withdrawn
 - [ ] User stories US-080 … US-091 describe the behaviour I expect
 
 ### 02 NFRs
@@ -105,7 +105,7 @@ Questions marked **(new)** or **(changed)** come from revision 0.2.
 
 ### 06 Architecture, 07 DB, 13 API
 - [ ] One deployment, two hosts; the bundle engine serves topics and posts
-- [ ] Per-user CP tables with a queue; guest data behind RLS
+- [ ] Owner-only CP tables with daily per-platform runs; guest data (reading progress only) behind RLS
 - [ ] Reader API and extension endpoints (NEUPC-compatible) are acceptable
 
 ### 08 Security
@@ -130,12 +130,12 @@ Questions marked **(new)** or **(changed)** come from revision 0.2.
 
 ### 20 CP tracking
 - [ ] The capability matrix matches my NEUPC experience; the "needs extension" judges are acceptable
-- [ ] Owner's public CP page uses all 10 judges; guests' data stays private
-- [ ] Practice auto-verification on roadmap topics
+- [ ] The public CP page uses my accounts on all 10 judges
+- [ ] Learners have **no** CP tracking; they tick roadmap practice problems themselves
 
 ### 14–18
-- [ ] Cost triggers (DB growth from guest solves; worker invocations) are acceptable
-- [ ] Estimate ≈ 142 days (+20%) and option B ordering are realistic
+- [ ] Cost triggers (DB growth from guest reading progress; reader-API invocations) are acceptable
+- [ ] Estimate ≈ 135 days (+20%) and option B ordering are realistic
 - [ ] Top risks R-01, R-05, R-16, R-18 have acceptable mitigations
 - [ ] I'll provide the content in [18 §9](18-content-inventory.md), including all judge handles
 

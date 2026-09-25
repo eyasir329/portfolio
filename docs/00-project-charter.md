@@ -1,6 +1,6 @@
 # 00 — Project Charter
 
-> Status: **Draft v0.2** · Owner: Eyasir Ahamed · Related: [01 PRD](01-product-requirements.md), [16 Delivery plan](16-delivery-plan.md), [17 Risks](17-risks-and-decisions.md), [CHANGELOG](CHANGELOG.md)
+> Status: **Draft v0.3** · Owner: Eyasir Ahamed · Related: [01 PRD](01-product-requirements.md), [16 Delivery plan](16-delivery-plan.md), [17 Risks](17-risks-and-decisions.md), [CHANGELOG](CHANGELOG.md)
 
 ---
 
@@ -17,8 +17,8 @@ The site should make four things obvious:
    (1000+ problems, ICPC 2025 Asia Dhaka Regional: 112th overall, Mymensingh Divisional Champion).
 3. **Teacher.** Public roadmap documentation and HTML-crafted blog posts, in the rigorous format of
    the `3_std_vector` reference topic.
-4. **Companion for learners.** Readers who sign in can track their roadmap progress and their CP
-   progress across judges in one private panel.
+4. **Companion for learners.** Readers who sign in can track their roadmap progress in one private
+   panel.
 
 ## 2. Problem statement
 
@@ -28,7 +28,7 @@ The site should make four things obvious:
 | CV stats go stale as soon as it's printed | Numbers under-sell current ability |
 | Roadmap topics exist only as local HTML bundles | No public home, no navigation, no discoverability |
 | Writing that needs interactivity (demos, measured charts) doesn't fit a Markdown blog | Posts would lose what makes the topic pages good |
-| Learners (club members, juniors) have no way to keep their progress through the roadmap across devices, or to see their CP progress on several judges in one place | Motivation and continuity suffer; everyone keeps spreadsheets |
+| Learners (club members, juniors) have no way to keep their progress through the roadmap across devices | Motivation and continuity suffer |
 | A static site needs a code change and a redeploy for each edit | Content rots because updating it has friction |
 
 ## 3. Goals and success metrics
@@ -42,14 +42,14 @@ The site should make four things obvious:
 | `G-05` | **Distinctive but fast** | Lighthouse (mobile) and field Core Web Vitals | Content pages Perf ≥ 95, 3D pages ≥ 90; LCP p75 ≤ 2.0 s / 2.5 s |
 | `G-06` | **Low running cost** | Monthly bill | $0 at launch; documented upgrade triggers ([14 §9](14-devops-and-environments.md)) |
 | `G-07` | **Accessible to everyone** | axe violations; manual audit | 0 serious/critical; WCAG 2.2 AA |
-| `G-08` | **Learner engagement** | Registered readers; weekly active readers; topics completed; readers with ≥ 1 linked judge | Trend upwards month over month; ≥ 25% of registered readers link a judge |
+| `G-08` | **Learner engagement** | Registered readers; weekly active readers; topics completed | Trend upwards month over month |
 | `G-09` | **Trustworthy with personal data** | Privacy incidents; export/delete requests fulfilled on time | 0 incidents; 100% within 30 days |
 
 ## 4. Scope
 
 ### 4.1 In scope (v1 launch)
 
-- Public portfolio: Home, About, Projects, Experience, CP Journey (10 judges synced), Contact, Resume.
+- Public portfolio: Home, About, Projects, Experience, CP Journey (the owner's 10 judge accounts synced), Contact, Resume.
 - **Content origin** (`read.eyasir329.dev`) serving **HTML bundles**: roadmap topics under
   `/docs/…` and **blog posts under `/blog/…`**, rendered exactly as authored. It also serves
   generated roadmap pages and hosts the reader runtime.
@@ -57,9 +57,9 @@ The site should make four things obvious:
   preview, or zip/CLI upload), versioned and schedulable; main-site index, tags, series and feeds.
 - **Guest accounts** (Google/GitHub sign-in) and a **reader panel** (`/me`). **Roadmap progress is
   saved only for signed-in readers**; anonymous readers can read everything but not track progress.
-- **CP tracking for guests** on Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES,
-  Toph and VJudge (API first; browser extension where judges don't expose solved lists), with
-  auto-verification of roadmap practice problems.
+- **The owner's CP tracking** on Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES,
+  Toph and VJudge (API first; the owner's browser extension where judges don't expose solved
+  lists) for the public CP Journey page.
 - Classical-minimal design system, light/dark themes, Three.js scenes with fallbacks.
 - Supabase (Postgres + RLS, Auth, Storage, cron), admin panel for everything (including users and
   reader analytics), SEO, analytics, monitoring and backups.
@@ -68,14 +68,15 @@ The site should make four things obvious:
 
 | Item | Why not now | Revisit |
 |---|---|---|
-| Public learner profiles, leaderboards | Would need handle verification and moderation | v2 |
+| **Learner CP tracking** (guests linking judge handles, CP dashboards, auto-verified practice) | Declined by the owner in revision 0.3 | — |
+| Public learner profiles, leaderboards | Not needed without learner CP tracking | — |
 | Reader notes/bookmarks | Nice, but not requested | v2 |
 | Comments | Moderation load; Giscus can be added inside the post template later | v1.1 (Could) |
 | Newsletter | Double opt-in and compliance work | v2 |
 | Bengali localisation | Doubles content effort | v2 |
 | Email/password or magic-link sign-in | Google + GitHub cover the audience | v1.1 (Could) |
 | Multi-author blog, paid content, mobile app | Not a goal | — |
-| Building a new browser extension from scratch | Reuse or fork the NEUPC extension ([20 §9](20-cp-multi-platform-tracking.md)) | — |
+| Building a new browser extension from scratch | The owner reuses the NEUPC extension ([20 §7](20-cp-multi-platform-tracking.md)) | — |
 
 ## 5. Stakeholders and audiences
 
@@ -84,7 +85,7 @@ The site should make four things obvious:
 | **Eyasir Ahamed** | Product owner, developer, sole admin (`owner`) | Approves scope; maintains content |
 | Recruiters and hiring managers | Primary audience (`P-01`) | Fast proof of fit |
 | Senior engineers and interviewers | Primary audience (`P-02`) | Depth: architecture, code, writing |
-| CP learners (NEUPC members, juniors, peers) | Primary audience for Docs; **registered guests** (`P-03`, `P-06`) | Structured roadmap, saved progress, multi-judge tracking |
+| CP learners (NEUPC members, juniors, peers) | Primary audience for Docs; **registered guests** (`P-03`) | Structured roadmap, saved progress |
 | Contest organisers and collaborators | Secondary (`P-05`) | Contact, credibility |
 | Optional future editor | `editor` role | Content help |
 
@@ -99,7 +100,7 @@ The site should make four things obvious:
 | C-5 | Docs render **full HTML** topic pages in the reference format, organised as a public roadmap |
 | C-6 | **Blog posts are written in HTML and rendered in full** |
 | C-7 | **Progress tracking only for signed-in readers**; anonymous = read-only |
-| C-8 | CP progress on the 10 listed judges |
+| C-8 | The owner's CP progress on the 10 listed judges (public CP Journey). **No CP tracking for learners** (revision 0.3) |
 | C-9 | Solo maintainer, near-zero budget at launch |
 | C-10 | Planning is audited by hand before any code is written or run |
 
@@ -111,10 +112,10 @@ The site should make four things obvious:
 | `A-02` | Topic bundles keep the reference structure | Extraction fallbacks + optional `kb.json` |
 | `A-03` | Traffic < 50k page views/month in year 1 | Upgrade triggers |
 | `A-04` | One primary admin | Roles support more |
-| `A-05` | **Year-1 registered readers < 2,000, of whom < 500 active monthly** | The sync queue and database sizing are reviewed ([20 §10](20-cp-multi-platform-tracking.md)) |
+| `A-05` | **Year-1 registered readers < 2,000, of whom < 500 active monthly** | Database sizing is reviewed ([07 §11](07-database-design.md)) |
 | `A-06` | The owner supplies missing content | Sections hide when empty |
 | `A-07` | **Judges keep today's public endpoints** (as used by NEUPC in July 2026); scraping-based ones may break | Adapters degrade to "needs extension"; per-platform flags |
-| `A-08` | **The NEUPC extension can be pointed at this site** (configurable API URL + compatible endpoints) | Fork a slim extension from the NEUPC code |
+| `A-08` | **The owner's NEUPC extension can be pointed at this site** (configurable API URL + compatible endpoints) | Fork a slim extension, or show profile-level stats only for those judges |
 
 ## 8. External dependencies
 
@@ -132,7 +133,7 @@ Sentry · judge endpoints ([20 §2](20-cp-multi-platform-tracking.md)) · option
 | **M3 Bundle engine & Docs** | Content origin, importer, versions, generated pages, CLI | `3_std_vector` served faithfully with working links |
 | **M4 HTML blog** | Editor, templates, scheduling, index/feeds | First post published from the editor |
 | **M5 Reader accounts & progress** | Session bridge, runtime, `/me`, analytics | Anonymous read-only; signed-in progress syncs across devices |
-| **M6 CP tracking** | 10 adapters, queue, extension ingestion, `/me/cp`, owner CP page | Owner and a test guest see correct data on all API judges |
+| **M6 Owner CP tracking** | 10 adapters, per-platform scheduled runs, owner extension ingestion, public CP page | The public CP page shows correct data for every API judge |
 | **M7 3D & polish** | Scenes, motion, fallbacks | 3D budgets met |
 | **M8 Launch** | SEO, a11y, security, performance, privacy, content | Launch checklist green |
 

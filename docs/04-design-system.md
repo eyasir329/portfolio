@@ -1,9 +1,10 @@
 # 04 — Design System: "Marble & Ink"
 
-> Status: **Draft v0.2** · Related: [05 3D](05-3d-experience.md), [02 NFR §2](02-non-functional-requirements.md), [03 IA §5](03-information-architecture.md), [19 Reader panel](19-guest-accounts-and-progress.md)
+> Status: **Draft v0.3** · Related: [05 3D](05-3d-experience.md), [02 NFR §2](02-non-functional-requirements.md), [03 IA §5](03-information-architecture.md), [19 Reader panel](19-guest-accounts-and-progress.md)
 >
 > **Revision 0.2:** blog typography now lives in the **"Marble & Ink essay" HTML template** (posts
 > are full HTML). New reader-panel components, account menu, sign-in page and the reader-runtime chip.
+> **Revision 0.3:** learner CP components removed (`SolvedTable`, CP items in the account menu).
 
 ---
 
@@ -196,14 +197,13 @@ body text.
 | `ContactForm` | Labels above fields, Turnstile, inline errors | |
 | `Scene3D` | Wrapper that decides poster vs. canvas ([05](05-3d-experience.md)) | |
 | `Colophon` (Footer) | Four columns, see [03 §4.2](03-information-architecture.md) | |
-| `AccountMenu` | "Sign in" text link, or avatar + menu (My progress, CP tracking, Settings, Admin, Sign out) | Quiet by design: the site is a portfolio first |
+| `AccountMenu` | "Sign in" text link, or avatar + menu (My progress, Settings, Admin, Sign out) | Quiet by design: the site is a portfolio first |
 | `SignInCard` | Serif title, one-line promise, Google/GitHub buttons (provider marks in monochrome), "what we store" list | `/login` |
 | `ContinueCard` | Last topic + section with a large serif title and a single "Continue" action | `/me` |
 | `ProgressBar` / `ProgressRing` | Hairline track, ink fill, accent only for "completed"; numbers shown as text ("8/13") | No percentages without counts |
-| `RoadmapProgressTree` | The roadmap map with per-topic progress and verified badges | `/me/roadmaps/*`, `/docs/[roadmap]` when signed in |
+| `RoadmapProgressTree` | The roadmap map with per-topic progress (sections and practice ticked) | `/me/roadmaps/*`, `/docs/[roadmap]` when signed in |
 | `ActivityCalendar` | 53 × 7 grid in ink tints; streak line in small caps | `/me` |
-| `JudgeCard` | Judge mark, handle, rating (rank colour), solved, status pill (synced / needs extension / failing) | `/me/cp`, `/cp` |
-| `SolvedTable` | Filterable list (judge, tag, difficulty, date) with tabular numbers | `/me/cp` |
+| `JudgeCard` | Judge mark, handle, rating (rank colour), solved, source note ("via extension") | `/cp` (owner's accounts) |
 | `RuntimeChip` | Fixed bottom-right pill on content-origin pages; inherits `--paper`, `--ink`, `--accent` from the page if defined, else Marble & Ink tokens; compact/full/hidden modes | Delivered by the reader runtime, not a React component |
 
 ### 6.2 Admin components
@@ -214,7 +214,7 @@ column visibility, bulk actions), `EntityForm` (React Hook Form + Zod), `Markdow
 + live `Prose` preview), `MediaPicker`, `SortableList` (dnd-kit), `StatusBadge`, `ConfirmDialog`
 (typed confirmation for destructive actions), `DiffViewer` (import dry-run, version compare),
 `FileTree` (bundle browser), **`HtmlEditor`** (file tree + CodeMirror HTML/CSS/JS + sandboxed
-preview with device widths), `TemplatePicker`, `JobLog` (sync/import logs), `QueueGauge` (CP queue),
+preview with device widths), `TemplatePicker`, `JobLog` (sync/import logs),
 `PlatformHealthTile`, `Toast` (sonner).
 
 ## 7. Motion
@@ -262,6 +262,6 @@ The main site's `/docs`, `/blog` listings and `/me` use Marble & Ink.
 |---|---|
 | Token file (`tokens.css` + Tailwind `@theme`) | Code (Phase 1) |
 | Type specimen page (`/admin/design` — internal) | Code (Phase 1) |
-| Wireframes: Home, Project, CP, Docs map, `/login`, `/me`, `/me/cp`, Admin list + HTML editor; the "Marble & Ink essay" post template | Low-fi (Excalidraw/Figma), attached to the Phase 1 PR |
+| Wireframes: Home, Project, CP, Docs map, `/login`, `/me`, Admin list + HTML editor; the "Marble & Ink essay" post template | Low-fi (Excalidraw/Figma), attached to the Phase 1 PR |
 | 3D art-direction still for each scene | Rendered PNG from the prototype spike `SP-05` |
 | Component inventory with states (default, hover, focus, active, disabled, loading, empty, error) | Storybook-lite page in `/admin/design` |

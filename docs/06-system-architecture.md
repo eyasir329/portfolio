@@ -1,9 +1,12 @@
 # 06 — System Architecture
 
-> Status: **Draft v0.2** · Related: [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [13 API](13-api-and-data-flow.md), [14 DevOps](14-devops-and-environments.md), [17 ADRs](17-risks-and-decisions.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
+> Status: **Draft v0.3** · Related: [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [13 API](13-api-and-data-flow.md), [14 DevOps](14-devops-and-environments.md), [17 ADRs](17-risks-and-decisions.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
 >
 > **Revision 0.2:** content origin renamed `read.` and extended to blog posts; reader runtime, reader
-> API and session bridge; guest accounts; CP worker queue for 10 judges; extension ingestion.
+> API and session bridge; guest accounts; CP sync for 10 judges; extension ingestion.
+>
+> **Revision 0.3:** CP sync is for the owner's accounts only; the job queue is replaced by one daily
+> run per platform; the extension is the owner's.
 
 ---
 
@@ -16,7 +19,7 @@ A **single Next.js 16 application** on **Vercel** serves two hosts:
   reader API.
 
 **Supabase** provides Postgres (RLS), Auth (Google + GitHub) and Storage. **pg_cron + pg_net** drive
-scheduled work, including a CP sync worker every minute.
+scheduled work, including one daily CP sync run per judge platform.
 
 ### 1.1 System context (C4 level 1)
 
@@ -28,7 +31,7 @@ flowchart LR
   GU --> READ
   AD(["Admin: owner/editor"]) --> SITE
   CLI(["Bundle CLI"]) --> SITE
-  EXT(["Browser extension"]) --> SITE
+  EXT(["Owner's browser extension"]) --> SITE
   SITE --> SB[("Supabase: Postgres, Auth, Storage")]
   READ --> SB
   SB --> IDP["Google / GitHub OAuth"]
@@ -51,13 +54,13 @@ flowchart TB
       PUB["(site) public routes"]
       ME["(me) reader panel"]
       ADM["(admin) routes + Server Actions"]
-      API["Route handlers: auth, bridge, cron, workers, bundles, extension, feeds, og"]
+      API["Route handlers: auth, bridge, cron and sync runs, bundles, extension, feeds, og"]
       CO["Content-origin handler: bundle files, generated pages, runtime, reader API"]
     end
     CDN["Vercel CDN"]
   end
   subgraph Supabase
-    PG[("Postgres: schema, RLS, FTS, pg_cron, pg_net, queue")]
+    PG[("Postgres: schema, RLS, FTS, pg_cron, pg_net")]
     AU["Auth: Google, GitHub, hooks"]
     ST["Storage: media, resumes, bundle-uploads, bundle-objects"]
   end
@@ -91,7 +94,7 @@ flowchart TB
 | **HTML editor** | CodeMirror 6 (HTML/CSS/JS), Prettier standalone in a worker | Write posts/topics in admin | ADR-014 |
 | **Reader runtime** | Vanilla TS → `runtime.v1.js` (≤ 8 KB gzip), built by esbuild | Runs inside untrusted pages; no framework | ADR-016 |
 | **Judge adapters** | TypeScript ports of NEUPC services; `node-html-parser` for HTML adapters | Reuse proven logic | ADR-017, ADR-018 |
-| Queue | Postgres table + `FOR UPDATE SKIP LOCKED`, pg_cron worker | No extra service | ADR-019 |
+| CP sync runs | One pg_cron job per platform per day + advisory lock + resumable cursors | Ten owner accounts don't need a queue | ADR-019 (revised) |
 | Search | Postgres FTS + `pg_trgm` | No extra service | ADR-009 |
 | Charts | Server-rendered SVG + small client tooltips | Tiny, accessible | — |
 | Email · bot protection · analytics · errors | Resend · Turnstile · Vercel Analytics/Speed Insights · Sentry | Free tiers | — |
@@ -125,7 +128,7 @@ flowchart TB
   SVC --> DATA["lib/data: typed queries + cached loaders (server-only)"]
   SVC --> BUN["lib/bundles: unzip, validate, extract, CAS, inject, serve, generate"]
   SVC --> RDR["lib/reader: sessions, bridge, progress, verification"]
-  SVC --> CPX["lib/cp: adapters, problem keys, queue worker, extension ingest"]
+  SVC --> CPX["lib/cp: adapters, problem keys, platform runs, owner extension ingest"]
   SVC --> INT["lib/integrations: GitHub, Resend, Turnstile"]
   DATA & BUN & RDR & CPX --> SBC["lib/supabase: server, browser, admin clients"]
   RT["runtime/ (separate build): reader runtime for the content origin"]
@@ -191,24 +194,21 @@ sequenceDiagram
 See [19 §2.2](19-guest-accounts-and-progress.md) (main-origin OAuth → one-time code → reader
 session).
 
-### 6.5 Scheduled and queued sync
+### 6.5 Scheduled CP sync (owner accounts)
 
 ```mermaid
 sequenceDiagram
   participant Cron as pg_cron
-  participant W as /api/cron/cp-worker
+  participant R as /api/cron/sync-cp?platform=atcoder
   participant DB as Postgres
-  participant J as Judge APIs / pages
-  Cron->>W: every minute (Bearer CRON_SECRET)
-  loop until 50 s budget used
-    W->>DB: claim_cp_jobs(n) FOR UPDATE SKIP LOCKED
-    W->>DB: platform budget ok? (next_allowed_at)
-    W->>J: adapter calls (incremental cursor)
-    J-->>W: data
-    W->>DB: upsert accounts, solves, ratings, activity, verify_practice(user)
-    W->>DB: job done / re-queue with backoff
-  end
-  W->>W: revalidateTag('cp') if any public (owner) account changed
+  participant J as Judge API or page
+  Cron->>R: daily, staggered per platform (Bearer CRON_SECRET)
+  R->>DB: sync_runs(running) + advisory lock for the platform
+  R->>J: profile, rating history, solves from the saved cursor
+  J-->>R: data
+  R->>DB: upsert cp_accounts, cp_solves, cp_rating_changes, cp_activity_days
+  R->>DB: sync_runs(succeeded, or partial with the cursor saved)
+  R->>R: revalidateTag('cp')
 ```
 
 ### 6.6 Bundle import & publish

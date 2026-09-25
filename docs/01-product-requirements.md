@@ -1,10 +1,13 @@
 # 01 — Product Requirements Document (PRD)
 
-> Status: **Draft v0.2** · Related: [00 Charter](00-project-charter.md), [02 NFRs](02-non-functional-requirements.md), [03 IA](03-information-architecture.md), [16 Delivery](16-delivery-plan.md)
+> Status: **Draft v0.3** · Related: [00 Charter](00-project-charter.md), [02 NFRs](02-non-functional-requirements.md), [03 IA](03-information-architecture.md), [16 Delivery](16-delivery-plan.md)
 >
 > **Revision 0.2 changes:** blog posts are **full HTML** (FR-BLOG rewritten); **guest accounts** with
 > a reader panel (FR-GUEST); **roadmap progress only for signed-in readers** (FR-PROG);
-> **CP tracking on 10 judges** for the owner and for guests (FR-CP, FR-CPT, FR-SYNC).
+> **CP tracking on 10 judges** for the owner (FR-CP, FR-SYNC).
+>
+> **Revision 0.3:** learner (guest) CP tracking is **removed** (FR-CPT withdrawn). Guests track roadmap
+> progress only.
 
 ---
 
@@ -17,7 +20,6 @@
 | `P-03` | **Nabila, CS student / CP learner** | Reads roadmap topics on a phone at night, in short sessions, on two devices | A clear roadmap, readable topics, **progress saved to their account** and synced across devices, practice problems | Losing their place, progress stuck on one device, walls of text |
 | `P-04` | **Eyasir, owner / admin** | Laptop; fixes a typo in 30 s, pushes 60 topics at once, writes posts in HTML | Fast editing, bulk import, an HTML editor with live preview, rollback, confidence nothing breaks | Redeploys, manual copy-paste, silent sync failures |
 | `P-05` | **Organiser / collaborator** | Arrives from a contest page, Discord or GitHub | Who Eyasir is, the club (NEUPC), how to get in touch | Hidden contact details |
-| `P-06` | **Arif, competitive programmer (guest)** | Active on Codeforces, AtCoder, LeetCode, VJudge; follows the CP roadmap | **One place** that tracks solves and ratings across judges, and ticks roadmap practice problems automatically | Checking five sites; manual spreadsheets |
 
 ### 1.1 Key journeys
 
@@ -28,7 +30,6 @@
 | J-3 Learner study session (`P-03`) | Opens a topic → sees "Sign in to track progress" → signs in with Google (one redirect) → ticks "mark read" → continues on another device from `/me` → "Continue where you left off" | Progress saved to the account and identical on both devices |
 | J-4 Owner publishes a topic (`P-04`) | Admin → Docs → upload zip → report → preview → Publish | Live within 60 s; the previous version is one click away |
 | J-5 Owner writes a post (`P-04`) | Admin → Blog → New from template → edit HTML with live preview → add assets → Save version → Schedule | Post goes live at the scheduled time, rendered exactly as written |
-| J-6 Guest tracks CP (`P-06`) | `/me/cp` → link Codeforces, AtCoder, VJudge handles → sync → sees combined solves and ratings → roadmap practice problems already ticked as "verified" | Accurate numbers within minutes; nothing typed by hand |
 
 ---
 
@@ -60,7 +61,6 @@ mindmap
       Google or GitHub sign-in
       Progress synced when signed in
       Reader panel at /me
-      CP tracking on 10 judges
     Admin
       Allowlisted admins
       CRUD everything
@@ -89,7 +89,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 | FR-GEN-09 | Privacy-friendly analytics; no tracking cookies | S |
 | FR-GEN-10 | Announcement bar (admin-controlled) | C |
 | FR-GEN-11 | Print stylesheet for About and Projects | C |
-| FR-GEN-12 | Account entry in the header: "Sign in" for visitors (subtle, not a primary CTA); avatar menu for signed-in users (My progress, CP tracking, Settings, Admin if allowed, Sign out) | M |
+| FR-GEN-12 | Account entry in the header: "Sign in" for visitors (subtle, not a primary CTA); avatar menu for signed-in users (My progress, Settings, Admin if allowed, Sign out) | M |
 
 ### 3.2 Home (`FR-HOME`)
 
@@ -185,7 +185,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 | FR-DOCS-09 | Content-origin sitemap, robots, canonical headers | M |
 | FR-DOCS-10 | Admin: outline editor, zip upload, bulk import with dry run, CLI, versions, preview, publish, rollback, link report, file browser | M |
 | FR-DOCS-11 | Create/edit topics in the in-admin HTML editor (same editor as the blog) | S |
-| FR-DOCS-12 | Practice problems in topics are matched to canonical judge problems for auto-verification (FR-CPT-06) | S |
+| FR-DOCS-12 | ~~Match practice problems to judge problems for auto-verification~~ (withdrawn in 0.3) | W |
 
 ### 3.9 Reading progress (`FR-PROG`) — design in [19 §3–4](19-guest-accounts-and-progress.md)
 
@@ -197,7 +197,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 | FR-PROG-04 | Offline/failed writes are queued and retried; no progress is lost | M |
 | FR-PROG-05 | Generated roadmap index pages show the signed-in reader's per-topic progress and "Continue where you left off" | M |
 | FR-PROG-06 | Reading position (last section reached) is remembered per topic | S |
-| FR-PROG-07 | Practice problems solved on linked judges appear ticked and "verified" | S |
+| FR-PROG-07 | ~~Practice problems auto-ticked from linked judges~~ (withdrawn in 0.3; readers tick practice themselves) | W |
 | FR-PROG-08 | Reset progress for a topic or a whole roadmap | S |
 
 ### 3.10 Guest accounts & reader panel (`FR-GUEST`) — design in [19](19-guest-accounts-and-progress.md)
@@ -205,25 +205,18 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 | ID | Requirement | Pri |
 |---|---|---|
 | FR-GUEST-01 | Anyone can create an account by signing in with Google or GitHub (`Q-26`); no password | M |
-| FR-GUEST-02 | `/me` dashboard: continue reading, roadmap progress cards, activity calendar/streak, CP summary, next recommended topic | M |
+| FR-GUEST-02 | `/me` dashboard: continue reading, roadmap progress cards, activity calendar/streak, next recommended topic | M |
 | FR-GUEST-03 | `/me/roadmaps/[roadmap]`: per-topic progress tree | M |
 | FR-GUEST-04 | `/me/settings`: display name/avatar, linked providers, sign out everywhere | M |
 | FR-GUEST-05 | Export my data (JSON) and delete my account (hard delete ≤ 30 days) | M |
 | FR-GUEST-06 | Guests can never access admin pages or other users' data | M |
 | FR-GUEST-07 | Public learner profiles / leaderboards | W (v2) |
 
-### 3.11 CP tracking for guests (`FR-CPT`) — design in [20](20-cp-multi-platform-tracking.md)
+### 3.11 CP tracking for learners (`FR-CPT`) — withdrawn
 
 | ID | Requirement | Pri |
 |---|---|---|
-| FR-CPT-01 | Link handles on Codeforces, AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES, Toph and VJudge; handle format and existence checked on add | M |
-| FR-CPT-02 | Automatic sync (on link, daily while active, "Sync now" with cooldown) with per-account status: synced, syncing, needs extension, failing | M |
-| FR-CPT-03 | `/me/cp`: combined distinct solves, per-judge cards, rating charts, combined heatmap, solved list with filters | M |
-| FR-CPT-04 | Browser-extension ingestion for judges without public solved lists (LeetCode, CSES, LightOJ, SPOJ, CodeChef), compatible with the owner's NEUPC extension (`Q-30`) | S |
-| FR-CPT-05 | Personal extension token (create/revoke) on `/me/extension` | S |
-| FR-CPT-06 | Roadmap practice problems auto-verified from the guest's solves | S |
-| FR-CPT-07 | Tag/difficulty distribution where available | C |
-| FR-CPT-08 | Handle ownership verification | C |
+| FR-CPT-01 | ~~Learners link judge handles, sync CP progress, see a CP hub, use extension tokens, and get practice problems auto-verified~~. **Removed in revision 0.3 at the owner's request.** Multi-judge tracking remains only for the owner's public CP Journey (FR-CP, FR-SYNC) | W |
 
 ### 3.12 Contact (`FR-CONTACT`)
 
@@ -264,7 +257,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 | FR-ADM-05 | Markdown editor with live preview for site-rendered text (bio, case studies, contest write-ups, privacy page) | M |
 | FR-ADM-06 | Signed, expiring previews for drafts and bundle versions | M |
 | FR-ADM-07 | Bundle management for roadmaps and posts (FR-DOCS-10, FR-BLOG-02/03/07) | M |
-| FR-ADM-08 | Sync centre: owner accounts, platform health per judge, queue depth, per-platform enable/disable, run logs | M |
+| FR-ADM-08 | Sync centre: owner accounts, platform health per judge, per-platform enable/disable, "Run now", run logs | M |
 | FR-ADM-09 | Messages inbox | M |
 | FR-ADM-10 | Settings (profile, social links, SEO, home sections, flags, maintenance) | M |
 | FR-ADM-11 | Audit log | S |
@@ -291,7 +284,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 |---|---|---|
 | FR-SYNC-01 | Daily GitHub sync for the owner | M |
 | FR-SYNC-02 | Judge adapters for all 10 judges, API-first, with scraping only where no API exists (flag per platform) and the extension where neither works | M |
-| FR-SYNC-03 | Database-backed sync queue with per-platform rate budgets, serving owner and guest accounts | M |
+| FR-SYNC-03 | Per-platform scheduled runs (daily, staggered) with incremental cursors and rate budgets for the owner's accounts; "Run now" per platform | M |
 | FR-SYNC-04 | Every run logged; "Run now"; stale warnings | M |
 | FR-SYNC-05 | Failures never break public pages (last good snapshot); the owner is emailed after 3 consecutive failures of an owner account or a platform-wide outage | M |
 | FR-SYNC-06 | CLIST.by fallback for contest results where direct sources fail (`Q-31`) | C |
@@ -313,7 +306,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 - **Given** the owner's public accounts on the 10 judges **when** the daily run completes **then** each account shows fresh rating/solved data (or "needs extension" where the judge has no public solved list), combined solves are recomputed, and the CP page updates. A failing judge keeps its last snapshot.
 
 **US-040 — Publish the `std::vector` topic** (FR-DOCS-03/10)
-- **Given** roadmap `cp` **when** I upload `3_std_vector.zip` to `phase-1/1_basics` **then** the report shows 45 files, title "std::vector", serial `01.01.14`, 13 sections, 11 simulations, 11 practice problems (11 canonical keys), 5 videos, 0 errors.
+- **Given** roadmap `cp` **when** I upload `3_std_vector.zip` to `phase-1/1_basics` **then** the report shows 45 files, title "std::vector", serial `01.01.14`, 13 sections, 11 simulations, 11 practice problems, 5 videos, 0 errors.
 - **When** I publish **then** `https://read.eyasir329.dev/docs/cp/phase-1/1_basics/3_std_vector/` serves it within 60 s; with the runtime block removed, the served `index.html` is byte-identical to the uploaded file, and every other file is byte-identical.
 
 **US-041 — Roll back a topic or post** (FR-DOCS-10, FR-BLOG-07): the previous version is served ≤ 60 s later; audit-logged.
@@ -338,14 +331,8 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 **US-082 — Progress follows the reader across devices** (FR-PROG-02/04)
 - **Given** a guest ticks sections 1–5 on a phone **when** they open the same topic on a laptop **then** sections 1–5 are ticked (server state wins). Ticks made offline are uploaded on the next visit.
 
-**US-083 — Guest links judges and practice is auto-verified** (FR-CPT-01/02, FR-CPT-06)
-- **Given** a guest links VJudge and Codeforces handles **when** the first sync finishes **then** `/me/cp` shows combined solves without double-counting problems solved on both, and on the `std::vector` topic every practice problem they've solved appears ticked with "verified via VJudge/Codeforces".
-
-**US-084 — Extension fills judges without APIs** (FR-CPT-04/05)
-- **Given** a guest created an extension token **when** the extension sends their accepted CSES submissions **then** those solves appear under CSES (source: extension) and matching roadmap practice items become verified. Submissions for a handle the guest hasn't linked are rejected.
-
 **US-085 — Export and delete** (FR-GUEST-05)
-- **When** a guest exports **then** they download a JSON file with profile, progress, handles and solves. **When** they delete their account **then** they're signed out everywhere immediately and all their rows are gone within 30 days.
+- **When** a guest exports **then** they download a JSON file with their profile and reading progress. **When** they delete their account **then** they're signed out everywhere immediately and all their rows are gone within 30 days.
 
 **US-090 — Owner writes an HTML post in admin** (FR-BLOG-01/02/04)
 - **Given** the "Marble & Ink essay" template **when** I create a post, write HTML with an interactive `<canvas>` demo, drop two images into `assets/` and click *Save version* **then** the preview renders it exactly (scripts run inside the sandbox), the validation report is clean, and metadata (title, description, reading time, sections) is extracted.
@@ -357,7 +344,7 @@ Priorities: **M** Must · **S** Should · **C** Could · **W** Won't (v1).
 
 ## 5. Out of scope for v1
 
-Comments (Could, via template) · newsletter · Bengali localisation · public learner profiles and
+**Learner CP tracking on judges (removed in 0.3)** · comments (Could, via template) · newsletter · Bengali localisation · public learner profiles and
 leaderboards · reader notes/bookmarks · paid content · multi-author workflow · generating the CV from
 the database. Rationale: [00 §4.2](00-project-charter.md).
 

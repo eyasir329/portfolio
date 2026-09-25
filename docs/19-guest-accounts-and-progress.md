@@ -1,6 +1,9 @@
 # 19 — Guest Accounts, Reader Panel & Progress Tracking
 
-> Status: **Draft v0.2** (new in revision 0.2) · Related: [01 FR-GUEST, FR-PROG](01-product-requirements.md), [08 Auth & security](08-auth-and-security.md), [10 Content origin & bundles](10-roadmap-docs-system.md), [20 CP tracking](20-cp-multi-platform-tracking.md), [07 DB §4.9](07-database-design.md)
+> Status: **Draft v0.3** · Related: [01 FR-GUEST, FR-PROG](01-product-requirements.md), [08 Auth & security](08-auth-and-security.md), [10 Content origin & bundles](10-roadmap-docs-system.md), [07 DB §4.9](07-database-design.md)
+>
+> **Revision 0.3:** guest accounts are for **roadmap progress only**. Learner CP tracking (judge
+> handles, CP hub, extension tokens, auto-verified practice) was removed at the owner's request.
 
 **Rule from the owner:** anyone can **read** every public roadmap topic and blog post. **Progress
 tracking needs sign-in.** Without an account, pages are read-only: the "mark read" and "solved"
@@ -12,12 +15,13 @@ controls are disabled and nothing is saved, not even in the browser.
 
 | Role | How you get it | Can do |
 |---|---|---|
-| **Anonymous reader** | No sign-in | Read everything public. No progress, no CP tracking |
-| **Guest (signed-in reader)** | Sign in with Google or GitHub (`Q-26`); an account is created automatically | Track roadmap progress (synced across devices), link CP handles on 10 judges and track CP progress, see their own reader panel (`/me`), export or delete their data |
+| **Anonymous reader** | No sign-in | Read everything public. No progress tracking |
+| **Guest (signed-in reader)** | Sign in with Google or GitHub (`Q-26`); an account is created automatically | Track roadmap progress (sections read, practice problems ticked; synced across devices), see their own reader panel (`/me`), export or delete their data |
 | **Editor / Owner** | Guest account **plus** an active row in the `admin_users` allowlist | Everything a guest can do, plus the admin panel ([09](09-admin-panel.md)) |
 
-The owner's own account is also a normal user account. The owner can use `/me` to track their own
-reading, and their **public** CP handles feed the public CP Journey page ([20 §8](20-cp-multi-platform-tracking.md)).
+The owner's own account is also a normal user account and can use `/me` to track their own reading.
+The owner's CP accounts on the 10 judges are managed in admin and are unrelated to guest accounts
+([20](20-cp-multi-platform-tracking.md)).
 
 ## 2. Sign-in & sessions
 
@@ -94,7 +98,7 @@ afterwards from `/__api/*` with `Cache-Control: no-store`.
 |---|---|---|
 | **In `<head>`, before page scripts** | Wraps `localStorage.setItem/removeItem` for keys starting with `keyPrefix`: **writes are dropped**. Deletes any leftover progress keys for this roadmap (e.g. from before a sign-out) | Same wrap, but writes go through to `localStorage` (a local cache for the page's own UI) **and** are queued for the server |
 | **Page renders** | The bundle's own scripts find no progress → "0%", nothing ticked | The bundle renders from the cached keys, so there's usually no flash |
-| **After `DOMContentLoaded`** | Disables the progress controls (`controls.section`, `controls.practice`) with `aria-describedby` → "Sign in to track your progress". Shows the account chip: **Sign in to track progress** | `GET /__api/progress?subject=…` → **server state wins**: for each key that differs, set the control's `checked` and dispatch `change`, so the bundle's own handler updates its UI and storage. Practice items verified from judge data ([20 §7](20-cp-multi-platform-tracking.md)) are ticked, locked, and labelled "verified via Codeforces" |
+| **After `DOMContentLoaded`** | Disables the progress controls (`controls.section`, `controls.practice`) with `aria-describedby` → "Sign in to track your progress". Shows the account chip: **Sign in to track progress** | `GET /__api/progress?subject=…` → **server state wins**: for each key that differs, set the control's `checked` and dispatch `change`, so the bundle's own handler updates its UI and storage |
 | **User ticks a box** | Control is disabled; nothing happens | The bundle writes the key → the runtime queues `{key, done, at}` → `PUT /__api/progress` (debounced 800 ms, batched). Flushed on `pagehide` with `fetch(keepalive)` |
 | **Offline / API down** | — | Changes stay in a pending queue in `localStorage` (`rt:pending`) and are retried on the next page load |
 | **Reading position** | — | `POST /__api/visit {anchor}` when the reader reaches a section (IntersectionObserver on `section[id]`), throttled, powering "Continue where you left off" |
@@ -136,7 +140,7 @@ readers see the structure plus a sign-in prompt, and no progress numbers.
 | Concept | Definition |
 |---|---|
 | **Section done** | `reading_progress(user, node, key='sN', done=true)`. Keys come from the bundle (`data-done` values) |
-| **Practice solved** | `reading_progress(user, node, key='pN', done=true, source='self' | 'verified')` |
+| **Practice solved** | `reading_progress(user, node, key='pN', done=true)`: ticked by the reader (no judge verification) |
 | **Topic completed** | All current section keys done (`topic_progress.completed_at` set). Practice is tracked separately ("8/11 solved") |
 | **Topic started** | Any key done, or a visit |
 | **Roadmap %** | Σ sections done ÷ Σ sections of **published** topics (planned topics excluded) |
@@ -153,10 +157,8 @@ Uses the Marble & Ink design ([04](04-design-system.md)); no 3D.
 | Route | Content |
 |---|---|
 | `/login` | "Continue with Google / GitHub", a short explanation of what's stored, links to Privacy |
-| `/me` | **Dashboard:** *Continue reading* (last topic + section, deep link), roadmap cards (% read, topics completed, practice solved/verified, last activity), activity calendar and streak, CP summary (combined solved across judges, best ratings; links to `/me/cp`), next recommended topic |
-| `/me/roadmaps/[roadmap]` | The roadmap tree with per-topic progress bars, "verified" badges on practice, reset topic/roadmap progress (typed confirmation) |
-| `/me/cp` | CP tracking hub ([20 §6](20-cp-multi-platform-tracking.md)): linked handles on 10 judges, sync status, per-platform stats, combined heatmap, rating charts, solved list with filters |
-| `/me/extension` | Create/revoke the browser-extension token (for LeetCode, CSES, LightOJ, SPOJ, CodeChef history), install instructions |
+| `/me` | **Dashboard:** *Continue reading* (last topic + section, deep link), roadmap cards (% read, topics completed, practice problems ticked, last activity), activity calendar and streak, next recommended topic |
+| `/me/roadmaps/[roadmap]` | The roadmap tree with per-topic progress bars (sections and practice), reset topic/roadmap progress (typed confirmation) |
 | `/me/settings` | Display name and avatar, linked sign-in providers, **Export my data** (JSON), **Delete my account**, **Sign out everywhere** |
 
 All `/me/*` pages are dynamic, `noindex`, and read data through RLS (`user_id = auth.uid()`).
@@ -167,12 +169,10 @@ All `/me/*` pages are dynamic, `noindex`, and read data through RLS (`user_id = 
 |---|---|---|
 | Email, name, avatar | OAuth provider | Until account deletion |
 | Reading progress, visits, activity days | Reader runtime | Until deletion or reset |
-| CP handles, synced stats, solves | Judge adapters / extension | Until the handle is removed or the account is deleted |
-| Extension tokens, reader sessions | Created by the user | Revocable; sessions expire after 30 days of inactivity |
+| Reader sessions (content origin) | Created on sign-in | Revoked on sign-out; expire after 30 days of inactivity |
 | Inactive accounts | — | After 24 months without sign-in: email notice, then deletion 30 days later (`Q-34`) |
 
-- **Export:** one JSON file with profile, progress, handles and solves (server action, generated on
-  demand).
+- **Export:** one JSON file with profile and reading progress (server action, generated on demand).
 - **Delete:** immediate sign-out and anonymisation; hard delete of all rows within 30 days
   (`on delete cascade` from `auth.users`).
 - **No public profiles in v1** (`Q-32`). A guest's data is visible only to themselves and, in
@@ -185,8 +185,8 @@ All `/me/*` pages are dynamic, `noindex`, and read data through RLS (`user_id = 
 
 | Screen | Purpose |
 |---|---|
-| `/admin/users` | All accounts: role, provider, created, last seen, handles linked, status; actions: **ban/unban**, delete (owner), promote to editor via the allowlist (owner) |
-| `/admin/readers` | Aggregate reader analytics: registered/active readers, completion funnel per roadmap and topic, the sections where readers stop, practice solve rates. No drill-down into individual histories |
+| `/admin/users` | All accounts: role, provider, created, last seen, topics started, status; actions: **ban/unban**, delete (owner), promote to editor via the allowlist (owner) |
+| `/admin/readers` | Aggregate reader analytics: registered/active readers, completion funnel per roadmap and topic, the sections where readers stop, share of practice problems ticked. No drill-down into individual histories |
 | Roadmap settings | Runtime mode (`inject` / `self` / `off`), chip mode, control selectors, key prefix pattern |
 
 ## 8. Non-functional targets
@@ -199,5 +199,5 @@ Defined in [02](02-non-functional-requirements.md); the ones specific to this mo
 | NFR-PERF-14 | Reader API p95 ≤ 300 ms; ticks reach the server ≤ 2 s; `/me` LCP ≤ 2.5 s |
 | NFR-REL-07 | No progress lost (pending queue + idempotent writes) |
 | NFR-PRIV-07 … 10 | Data minimisation, self-service export/delete, aggregate-only admin views, inactivity policy |
-| NFR-SEC-10 … 12 | Safe open registration, abuse controls, scoped hashed tokens |
+| NFR-SEC-10 … 12 | Safe open registration, abuse controls, admin-only scoped tokens |
 | NFR-A11Y-12 | Accessible chip and disabled controls |

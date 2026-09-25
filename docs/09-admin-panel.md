@@ -1,10 +1,11 @@
 # 09 — Admin Panel
 
-> Status: **Draft v0.2** · Related: [01 FR-ADM](01-product-requirements.md), [03 §3.2](03-information-architecture.md), [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Bundles](10-roadmap-docs-system.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
+> Status: **Draft v0.3** · Related: [01 FR-ADM](01-product-requirements.md), [03 §3.2](03-information-architecture.md), [07 DB](07-database-design.md), [08 Security](08-auth-and-security.md), [10 Bundles](10-roadmap-docs-system.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
 >
 > **Revision 0.2:** the blog uses the shared **HTML editor** (§4.7) and **templates** (§4.9). New
 > **Users** and **Readers** screens (§4.15–4.16). **Sync** becomes a judge-platform health centre
-> (§4.13).
+> (§4.13). **Revision 0.3:** no learner CP data anywhere in admin; judge sync is for the owner's
+> accounts only.
 
 ---
 
@@ -108,8 +109,8 @@ study (Markdown) · Media · Links · Relations · SEO); single-page forms with 
 skills editor.
 
 ### 4.6 CP Journey `/admin/cp`
-- **Owner accounts:** the owner's judge accounts (10 platforms): handle, visibility (public),
-  show-on-site, status, last sync, last error, "Sync now", **Overrides** drawer.
+- **Owner accounts:** the owner's judge accounts (10 platforms): handle, show-on-site, status, last
+  sync, last error, "Run now", **Overrides** drawer.
 - **Contests & milestones:** as before.
 - **Preview** of the public CP overview.
 
@@ -139,7 +140,7 @@ skills editor.
   (Prettier in a worker), lint hints (unclosed tags, missing `alt`).
 - **Preview pane:** reloads on save (debounced 800 ms) from a short-lived preview token for the draft
   overlay; device widths; open in a new tab.
-- **Report:** runs the same validation as imports (W01–W19) on every "Save version"; errors block
+- **Report:** runs the same validation as imports (W01–W18) on every "Save version"; errors block
   the version.
 - **Listing panel** (right drawer): title/excerpt/cover/SEO overrides, extracted-metadata view,
   series, schedule.
@@ -153,8 +154,7 @@ Roadmaps list; roadmap page tabs: *Outline* (tree editor, outline import) · *Se
 theme key, progress key pattern, **runtime mode, chip mode, control selectors**, private globs, CSP
 extras, licence) · *Imports* (bulk jobs, dry-run reports) · *Link report* · **Readers** (aggregate
 completion per topic). Node page: metadata, **Versions**, **Upload**, **Open in editor** (same HTML
-editor as the blog), **Files**, **Practice items** (extracted links with canonical keys, "unmatched"
-warnings).
+editor as the blog), **Files**, **Practice** (extracted practice links and their progress keys).
 
 ### 4.9 Templates `/admin/templates`
 Library of starter bundles for posts and topics (name, kind, description, default flag); edited in
@@ -167,9 +167,8 @@ Unchanged.
 | Panel | Content |
 |---|---|
 | Platform health | One tile per judge: enabled switch, scraping switch (HTML adapters), success rate (24 h / 7 d), last error, current budget/next-allowed time, "needs extension" share |
-| Queue | Depth by status and platform, oldest queued job age, worker last run, throughput |
 | Owner accounts | As in §4.6 |
-| Runs | GitHub and scheduler runs (`sync_runs`) with stats and errors |
+| Runs | GitHub and per-platform runs (`sync_runs`) with status (succeeded / partial / failed), stats, cursor progress and errors |
 | CLIST | Key configured, usage this hour (`Q-31`) |
 
 ### 4.14 Settings `/admin/settings`
@@ -178,18 +177,18 @@ Tabs: Site · Navigation · Home · Social links · Flags · Announcement · Pri
 
 ### 4.15 Users `/admin/users`
 All accounts: display name, email, provider, role (guest/editor/owner), status, created, last seen,
-linked judges (count), roadmap topics started (count). Row actions: **Ban / Unban** (owner, typed
+roadmap topics started (count). Row actions: **Ban / Unban** (owner, typed
 reason → audit log), **Delete** (owner), **Promote to editor** (owner → adds the allowlist row).
-Individual reading histories and solve lists are **not** shown (privacy).
+Individual reading histories are **not** shown (privacy).
 
 ### 4.16 Readers `/admin/readers` (aggregate analytics)
 Registered and weekly-active readers; sign-up sources; per roadmap: topics started/completed
-funnel; per topic: section drop-off chart (the section where most readers stop), practice solve
-rates (self vs verified); judges linked by platform. All counts; no personal drill-down.
+funnel; per topic: section drop-off chart (the section where most readers stop), share of practice
+problems ticked. All counts; no personal drill-down.
 
 ### 4.17 Redirects · Audit log · Admins 🔒 · Tokens 🔒
-As before. *Admins* is the allowlist (`admin_users`); *Tokens* are CLI tokens (`bundle:*` scopes).
-Guest extension tokens are managed by guests themselves in `/me/extension`.
+As before. *Admins* is the allowlist (`admin_users`); *Tokens* are admin API tokens: bundle CLI
+(`bundle:*`) and the owner's CP extension (`cp:ingest`). Guests have no tokens.
 
 ## 5. Admin technology
 
@@ -204,7 +203,7 @@ Guest extension tokens are managed by guests themselves in `/me/extension`.
 | Uploads | TUS resumable (zips, large assets); direct signed uploads for small assets |
 | Preview | Sandboxed iframe (`allow-scripts allow-popups`) pointing at signed content-origin preview URLs |
 | Diffs | `diff` for text; hash-based file lists |
-| Live progress | Supabase Realtime only for import jobs and the sync queue depth widget |
+| Live progress | Supabase Realtime only for import jobs |
 
 ## 6. Permission matrix (screens)
 

@@ -1,6 +1,6 @@
 # 05 — 3D Experience
 
-> Status: **Draft v0.2** (rev 0.2: Colonnade uses combined solves across the owner's public judge accounts; no 3D on the reader panel) · Related: [04 Design](04-design-system.md), [02 NFR-PERF-09/10, NFR-A11Y-04/05](02-non-functional-requirements.md), [ADR-008](17-risks-and-decisions.md)
+> Status: **Draft v0.3** (Colonnade uses combined solves across the owner's judge accounts; no 3D on the reader panel) · Related: [04 Design](04-design-system.md), [02 NFR-PERF-09/10, NFR-A11Y-04/05](02-non-functional-requirements.md), [ADR-008](17-risks-and-decisions.md)
 
 ---
 
@@ -50,7 +50,7 @@ flowchart LR
 
 | Aspect | Specification |
 |---|---|
-| Data | `cp_activity_monthly_public` view: month, accepted solves combined across the owner's public judge accounts (canonical keys, deduplicated), contest count, max rating that month |
+| Data | `cp_activity_monthly_public` view: month, accepted solves combined across the owner's judge accounts (canonical keys, deduplicated), contest count, max rating that month |
 | Geometry | One column = `LatheGeometry` shaft with 16 flutes (normal-mapped, not modelled) + simple Doric capital and base; `InstancedMesh`, height scaled per instance. Stylobate (stepped base) as a single box mesh |
 | Scale | Height ∝ √(accepted) so that one huge month doesn't flatten the rest; axis labels every year in DOM overlay (drei `Html`, occluded) |
 | Encoding | Accent capital = a month with a rated contest; ICPC month gets a small accent laurel (torus) |

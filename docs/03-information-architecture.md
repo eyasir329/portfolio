@@ -1,9 +1,11 @@
 # 03 — Information Architecture
 
-> Status: **Draft v0.2** · Related: [01 PRD](01-product-requirements.md), [04 Design](04-design-system.md), [09 Admin](09-admin-panel.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [19 Guests](19-guest-accounts-and-progress.md)
+> Status: **Draft v0.3** · Related: [01 PRD](01-product-requirements.md), [04 Design](04-design-system.md), [09 Admin](09-admin-panel.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [19 Guests](19-guest-accounts-and-progress.md)
 >
 > **Revision 0.2:** the content origin is renamed `read.eyasir329.dev` and hosts **docs and blog
 > posts**. New routes: `/login`, `/me/**`, content-origin `/__rt`, `/__api`, `/__auth`.
+>
+> **Revision 0.3:** `/me/cp` and `/me/extension` removed (no learner CP tracking).
 
 Domain names are **placeholders** until `Q-01` / `Q-04` are answered.
 
@@ -36,8 +38,6 @@ flowchart TD
   H --> R["/resume (PDF)"]
   H --> L["/login"] --> ME["/me (reader panel)"]
   ME --> MER["/me/roadmaps/[roadmap]"]
-  ME --> MEC["/me/cp"]
-  ME --> MEX["/me/extension"]
   ME --> MES["/me/settings"]
   H --> ADM["/admin (admins only)"]
 ```
@@ -69,10 +69,8 @@ flowchart TD
 
 | Route | Screen |
 |---|---|
-| `/me` | Dashboard: continue reading, roadmap progress, activity, CP summary, next topic |
+| `/me` | Dashboard: continue reading, roadmap progress, activity, next topic |
 | `/me/roadmaps/[roadmap]` | Roadmap progress tree, reset |
-| `/me/cp` | Linked judge accounts, sync status, stats, charts, solved list |
-| `/me/extension` | Extension tokens, install guide |
 | `/me/settings` | Profile, providers, export, delete, sign out everywhere |
 
 ### 3.3 Admin routes — main origin (admins only, `noindex`)
@@ -113,13 +111,13 @@ Contracts: [13 §4.1](13-api-and-data-flow.md).
 **Contact**.
 
 **Account entry:** anonymous → a quiet "Sign in" text link (the site is a portfolio first; sign-in
-isn't a hero CTA). Signed in → avatar menu: *My progress* (`/me`), *CP tracking* (`/me/cp`),
-*Settings*, *Admin* (admins only), *Sign out*.
+isn't a hero CTA). Signed in → avatar menu: *My progress* (`/me`), *Settings*, *Admin*
+(admins only), *Sign out*.
 
 ### 4.2 Footer (colophon)
 
 *Index* (primary links + Resume, Privacy, Terms) · *Elsewhere* (GitHub, LinkedIn, Codeforces, email,
-RSS) · *Readers* ("Track your progress" → `/login` or `/me`) · *Colophon*.
+RSS) · *Readers* ("Track your roadmap progress" → `/login` or `/me`) · *Colophon*.
 
 ### 4.3 Breadcrumbs
 
@@ -132,7 +130,7 @@ breadcrumbs as authored.
 |---|---|
 | Project | Related posts (content origin), docs roadmap, skills, experience |
 | Post listing | The post on the content origin; series and tags on the main site |
-| CP page | CP roadmap, NEUPC, contest write-ups, "Track your own CP progress" → `/me/cp` |
+| CP page | CP roadmap, NEUPC, contest write-ups |
 | Docs map | Topics on the content origin; "Sign in to track progress" |
 | Topic / post (content origin) | As authored + the runtime chip (sign-in / "My progress") |
 | `/me` | Content-origin deep links ("Continue: std::vector §4") |
@@ -146,13 +144,12 @@ Sections hide when empty.
 | **Home** | Hero (3D) → proof strip → I. Selected work → II. Contest record → III. Writing → IV. The library → V. Chronology → Coda |
 | **Projects / Project** | As in revision 0.1 |
 | **Experience** | Title → filters → chronology → CV link |
-| **CP Journey** | Summary → 10 judge cards → Colonnade + table → rating charts (judge toggle) → heatmap → onsite contests → tags/difficulty → milestones → links ("Track your own progress") |
+| **CP Journey** | Summary → 10 judge cards → Colonnade + table → rating charts (judge toggle) → heatmap → onsite contests → tags/difficulty → milestones → links (CP roadmap, NEUPC) |
 | **Blog index** | Title → tag filter → list (title, date, reading time, excerpt) → pagination |
 | **Docs catalog / map** | Catalog cards → map: phases (Roman numerals) → modules → topics (serial · title · time · status · progress dot if signed in) |
 | **About / Contact** | As in revision 0.1 |
-| **Login** | Title "Sign in" → one-line promise ("Save your roadmap progress and track your CP journey across 10 judges") → Google / GitHub buttons → what we store (3 bullets) → Privacy link |
-| **`/me`** | Greeting → *Continue reading* card → roadmap progress cards → activity calendar/streak → CP summary strip → next recommended topic |
-| **`/me/cp`** | Linked accounts table (+ Add account) → combined summary → per-judge cards → charts → solved list → roadmap practice solved |
+| **Login** | Title "Sign in" → one-line promise ("Save your roadmap progress and pick up where you left off on any device") → Google / GitHub buttons → what we store (3 bullets) → Privacy link |
+| **`/me`** | Greeting → *Continue reading* card → roadmap progress cards → activity calendar/streak → next recommended topic |
 | **`/me/settings`** | Profile → sign-in providers → sessions (sign out everywhere) → data (export, delete) |
 
 ## 6. URL & slug rules
@@ -179,9 +176,7 @@ erDiagram
   DOC_NODE ||--o{ BUNDLE_VERSION : versions
   USER ||--o{ READING_PROGRESS : tracks
   DOC_NODE ||--o{ READING_PROGRESS : about
-  USER ||--o{ CP_ACCOUNT : links
-  CP_ACCOUNT ||--o{ CP_SOLVE : solved
-  DOC_NODE ||--o{ PRACTICE_ITEM : lists
+  CP_ACCOUNT ||--o{ CP_SOLVE : "solved (owner)"
 ```
 
 ## 8. Empty, loading and error states
@@ -192,6 +187,6 @@ erDiagram
 | Loading | Streaming skeletons with final dimensions; 3D posters |
 | Signed out on `/me/**` | Redirect to `/login?return=` |
 | Guest on `/admin/**` | 403 page with a link to `/me` |
-| Sync stale / failing | Public: "as of {date}". `/me/cp`: per-account status with a fix hint (e.g. "Install the extension for CSES") |
+| Sync stale / failing | Public: "as of {date}". Admin: per-platform status with a fix hint (e.g. "Use the extension for CSES") |
 | Not found | 404 with search; redirects where possible |
 | Server error | Friendly page with a digest ID |

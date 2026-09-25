@@ -1,10 +1,13 @@
 # 15 — Testing & Quality Assurance
 
-> Status: **Draft v0.2** · Related: [01 §4 user stories](01-product-requirements.md), [02 NFRs](02-non-functional-requirements.md), [14 §4 CI](14-devops-and-environments.md)
+> Status: **Draft v0.3** · Related: [01 §4 user stories](01-product-requirements.md), [02 NFRs](02-non-functional-requirements.md), [14 §4 CI](14-devops-and-environments.md)
 >
 > **Revision 0.2:** new test groups for the reader runtime (T-RT), session bridge (T-BR), guest data
-> isolation (T-GU), judge adapters/queue/extension (T-CPT) and HTML posts (T-BLOG); new UAT scripts
+> isolation (T-GU), judge adapters/extension (T-CPT) and HTML posts (T-BLOG); new UAT scripts
 > for guests.
+>
+> **Revision 0.3:** learner-CP tests replaced by owner-only CP tests (run lock, resumable backfill,
+> owner extension) and reset-progress tests.
 
 ---
 
@@ -39,8 +42,8 @@ flowchart TB
 | `tests/fixtures/bundles/posts/` | HTML posts: template-based essay; post with `<canvas>` demo and inline scripts; post with an external CDN script (W04); post missing OG tags (W17) |
 | `tests/fixtures/bundles/hostile/*.zip` | Zip slip, absolute paths, symlink, zip bomb, 3,001 files, `.exe`, encrypted, non-UTF-8 |
 | `tests/fixtures/judges/{platform}/…` | Recorded responses for all 10 judges: success, empty, `FAILED`, 429, Cloudflare challenge HTML, malformed |
-| `tests/fixtures/judges/problem-urls.csv` | URL → canonical key table (every pattern in [20 §4](20-cp-multi-platform-tracking.md), including the 11 practice links of the reference topic) |
-| `tests/fixtures/extension/*.json` | NEUPC-extension payloads (single and bulk) |
+| `tests/fixtures/judges/problem-urls.csv` | URL/id → canonical key table (every pattern in [20 §4](20-cp-multi-platform-tracking.md)) for cross-judge dedupe of the owner's solves |
+| `tests/fixtures/extension/*.json` | NEUPC-extension payloads (single and bulk) for the owner's ingestion endpoint |
 | `supabase/seed.sql` + `tests/seed.test.sql` | Allowlist, test guests, CV drafts, the 10 platforms |
 
 ## 3. Test catalogue
@@ -49,7 +52,7 @@ flowchart TB
 
 | ID | Test | Expected |
 |---|---|---|
-| T-KB-01 | Import the reference bundle | Metadata exactly as in [10 §5.3](10-roadmap-docs-system.md), including 11 practice keys with 11 canonical problem keys |
+| T-KB-01 | Import the reference bundle | Metadata exactly as in [10 §5.3](10-roadmap-docs-system.md), including 11 practice keys |
 | T-KB-02 | Byte fidelity | Served `index.html` minus the injected block == stored SHA-256; every other file byte-identical |
 | T-KB-03 | Missing trailing slash | 308 |
 | T-KB-04 | `…/index.html` | 200, same bytes, canonical `Link` header |
@@ -82,7 +85,7 @@ flowchart TB
 | T-RT-03 | Signed in, empty server state, tick §2 | `PUT /__api/progress` within 2 s; the server row exists; the bundle UI shows §2 read |
 | T-RT-04 | Signed in, server has §1–§5, browser has none | After load, §1–§5 ticked via `change` events; the page's own progress box shows 38% |
 | T-RT-05 | Offline tick, then online reload | Pending queue flushed; server updated |
-| T-RT-06 | Verified practice | Items ticked, locked, labelled "verified via …" |
+| T-RT-06 | Reset from `/me` | After resetting a topic in `/me`, the next page load shows no ticks and the browser cache is cleared |
 | T-RT-07 | Runtime blocked (script fails) | Page fully readable; no errors breaking the bundle |
 | T-RT-08 | Size and speed | ≤ 8 KB gzip; < 5 ms before first paint (performance trace) |
 | T-RT-09 | Chip accessibility | Keyboard reachable, labelled, sufficient contrast in both themes |
@@ -103,12 +106,12 @@ flowchart TB
 | T-BR-04 | Sign out on the main origin | Content-origin session revoked too |
 | T-BR-05 | CSRF on `PUT /__api/progress` (cross-site form, missing `X-RT`, wrong Origin) | Rejected |
 | T-GU-01 | Guest A reads/writes guest B's progress, accounts, solves, tokens (API and direct PostgREST) | Always denied |
-| T-GU-02 | Guest tries to create a `public` CP account | Denied |
-| T-GU-03 | Guest creates a token with `bundle:*` scope | Denied |
+| T-GU-02 | Guest calls owner/admin CP actions or reads CP admin data | Denied |
+| T-GU-03 | Guest tries to create any API token | Denied (tokens are admin-only) |
 | T-GU-04 | Export | JSON contains exactly the user's own data |
 | T-GU-05 | Delete account | Immediate sign-out everywhere; rows gone after the deletion job |
 
-### 3.4 CP tracking (T-CP, T-CPT)
+### 3.4 CP tracking — owner accounts (T-CP, T-CPT)
 
 | ID | Test | Expected |
 |---|---|---|
@@ -118,11 +121,11 @@ flowchart TB
 | T-CP-04 | Override precedence | "1000+" shown when set |
 | T-CPT-01 | Each of the 10 adapters against its fixtures | Correct profile/rating/solves; challenge pages → `needs_extension` or `failing`, never a crash |
 | T-CPT-02 | Canonical keys | Every URL in `problem-urls.csv` → the expected key; VJudge-origin and direct solves dedupe |
-| T-CPT-03 | Queue concurrency | Two workers never claim the same job; platform budgets respected (timestamps) |
-| T-CPT-04 | Cooldowns | Second "Sync now" within 30 min → `RATE_LIMITED` |
-| T-CPT-05 | Extension ingestion | Valid token + linked handle → solves stored (`source='extension'`); unlinked handle → rejected; revoked token → 401; NEUPC alias endpoints accept NEUPC payloads |
-| T-CPT-06 | Practice verification | After a sync with solves matching reference practice links, `reading_progress` has `verified` rows for the right keys |
-| T-CPT-07 | Kill switch | Disabling a platform pauses its jobs; accounts show "paused" |
+| T-CPT-03 | Run lock | Two overlapping runs of one platform: the second is skipped (advisory lock) |
+| T-CPT-04 | "Run now" limit | A second run of the same platform within 10 min → `RATE_LIMITED` |
+| T-CPT-05 | Owner extension ingestion | Owner token + owner handle → solves stored (`source='extension'`); unknown handle → rejected; revoked token → 401; non-admin token impossible; NEUPC alias endpoints accept NEUPC payloads |
+| T-CPT-06 | Resumable backfill | A backfill longer than the 50 s budget ends `partial`; the next run continues from the cursor without duplicates |
+| T-CPT-07 | Kill switch | Disabling a platform skips its runs; its card shows the last snapshot |
 | T-GH-01 | GitHub mapper | Stars, languages |
 
 ### 3.5 Blog (T-BLOG)
@@ -166,7 +169,7 @@ flowchart TB
 | T-DB-10 | `kb_nodes.path` trigger | Descendants updated on rename |
 | T-DB-11 | Full RLS matrix ([07 §7.1](07-database-design.md)) | Every cell behaves as specified |
 | T-DB-12 | Deletion job | Removes all rows of a user (cascade check across every user-owned table) |
-| T-DB-13 | `claim_cp_jobs` | `SKIP LOCKED` semantics under concurrency |
+| T-DB-13 | CP tables | anon reads only `show_on_site` accounts and their rows; only admins write |
 | T-DB-14 | `topic_progress` after a republish that changes section keys | Totals use the new keys |
 
 ## 4. Accessibility checklist (manual, per release)
@@ -197,8 +200,8 @@ many users**) · S2 Major · S3 Minor · S4 Trivial. Responses as before.
 | UAT-06 Rollback | Publish a broken version and roll back | Old version back ≤ 60 s |
 | UAT-07 Anonymous read-only | Open a topic signed out on a phone | Everything readable; controls disabled; nothing saved after reload |
 | UAT-08 Guest progress | Sign in from the topic chip; tick sections on the phone; open on a laptop | Same ticks on both; `/me` shows "Continue" |
-| UAT-09 Guest CP | Link Codeforces, AtCoder, VJudge, UVa handles; wait for sync; open `/me/cp`; check the reference topic's practice | Correct numbers; solves deduplicated; verified practice ticks |
-| UAT-10 Extension | Install the NEUPC extension pointed at staging; create a token; open an accepted CSES submission | CSES solve appears; matching practice verified |
+| UAT-09 Reset progress | In `/me`, reset one topic, then a whole roadmap | Ticks cleared on the phone and the laptop; dashboard numbers updated |
+| UAT-10 Owner extension | Point the NEUPC extension at staging with an owner `cp:ingest` token; open an accepted CSES submission | The solve appears on the owner's CSES card and in the combined total |
 | UAT-11 Owner CP page | Owner accounts on all 10 judges synced | Public CP page correct; "needs extension" judges labelled honestly |
 | UAT-12 Privacy | Export data; delete a test guest | JSON complete; account gone; sessions revoked |
 | UAT-13 CV & contact | New CV current; message from a phone | As before |
@@ -213,7 +216,7 @@ for runtime changes, T-RT-01…10 green on the reference bundle; for adapter cha
 
 - [ ] All Must stories accepted (UAT-01 … UAT-14 signed)
 - [ ] Content complete (profile, projects, CV, ≥ 1 roadmap, ≥ 1 post, owner judge handles)
-- [ ] Production Supabase: RLS tests pass; hooks enabled (Google + GitHub); cron jobs (including the CP worker) scheduled; Vault secrets; email provider disabled
+- [ ] Production Supabase: RLS tests pass; hooks enabled (Google + GitHub); cron jobs (including the 10 per-platform CP jobs) scheduled; Vault secrets; email provider disabled
 - [ ] Google consent screen in production; GitHub OAuth app configured; only production redirect URLs
 - [ ] Domains: apex, `www`, `read` (content origin); HTTPS; HSTS without preload at first
 - [ ] Privacy and terms pages published **before** guest sign-up opens

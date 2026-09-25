@@ -1,11 +1,14 @@
 # 10 — Content Origin, HTML Bundle Engine & Roadmap Docs
 
-> Status: **Draft v0.2** · Related: [01 FR-DOCS, FR-BLOG](01-product-requirements.md), [07 §4.6](07-database-design.md), [08 §6–7](08-auth-and-security.md), [09 §4.7–4.8](09-admin-panel.md), [11 §7 Blog](11-content-modules.md), [19 Reader runtime](19-guest-accounts-and-progress.md), ADR-004/005/006/014/020 in [17](17-risks-and-decisions.md)
+> Status: **Draft v0.3** · Related: [01 FR-DOCS, FR-BLOG](01-product-requirements.md), [07 §4.6](07-database-design.md), [08 §6–7](08-auth-and-security.md), [09 §4.7–4.8](09-admin-panel.md), [11 §7 Blog](11-content-modules.md), [19 Reader runtime](19-guest-accounts-and-progress.md), ADR-004/005/006/014/020 in [17](17-risks-and-decisions.md)
 
 > **Revision 0.2:** (1) the engine is generalised: **blog posts are HTML bundles too**; (2) the
 > content origin is renamed `read.eyasir329.dev` and hosts `/docs/…` and `/blog/…`; (3) served HTML
 > entry documents get **one injected runtime block** for sign-in-gated progress tracking; stored
 > bytes stay immutable; (4) an **in-admin HTML editor** joins zip upload and the CLI.
+>
+> **Revision 0.3:** practice links are no longer matched to judge problems (no learner CP tracking,
+> no auto-verification). Readers tick practice problems themselves.
 
 This document explains how self-contained HTML pages (like the `3_std_vector` reference topic, and
 now every blog post) become public, versioned, navigable pages **without changing what the author
@@ -56,7 +59,7 @@ reference. Everything below was read from that archive.
 | Sections | `section.sec[id]`, `h2[data-n]`, "mark read" `input[data-done="sN"]` (13) | `sections[]`, `progress.sectionKeys[]`, control selector `input[data-done]` |
 | Demos / quizzes | `.demo` (11) / `.quiz[data-correct]` (9) | `stats.demos`, `stats.quizzes` |
 | Videos | `.vid[data-v]` (5), facade → `youtube-nocookie.com` on click | `videos[]` |
-| Practice | `section#practice .pr table` (11 links: vjudge, CSES); the page script injects `input.pchk` "solved" boxes | `practice[]` (+ canonical `problem_key`, [20 §4](20-cp-multi-platform-tracking.md)), `progress.practiceKeys[]`, control selector `input.pchk` |
+| Practice | `section#practice .pr table` (11 links: vjudge, CSES); the page script injects `input.pchk` "solved" boxes | `practice[]`, `progress.practiceKeys[]`, control selector `input.pchk` |
 | Pager | `nav.pager a` → prev "Lambdas & Comparators", next "std::string & Text Processing" | `pager{}` |
 | Footer | Credits sources, links `data/00-index.md` | `footer` |
 
@@ -188,7 +191,7 @@ generators import too.
 | `toc`, `sections` | `nav.toc a[href^="#"]`; `section.sec[id]` (heading = `h2` without the "mark read" label) | `h2[id]` |
 | `progress.sectionKeys` | `[data-done]` values | `kb.json` |
 | `progress.practiceKeys` | `p0…p{n-1}` for `n` rows of `.pr tbody tr` | `kb.json` |
-| `practice[]` | `.pr a[href]` → title, URL, judge host, **canonical `problem_key`** | — |
+| `practice[]` | `.pr a[href]` → title, URL, judge host (listed in admin; not verified against judges) | — |
 | `controls` | defaults `input[data-done]`, `input.pchk` | roadmap setting / `kb.json` |
 | `videos`, `pager`, `quizzes`, `demos`, `a11y` | as in the reference | — |
 
@@ -208,7 +211,7 @@ Admin fields (title, excerpt, tags, series, cover) **override** extracted values
 and OG images; the post's own `<head>` stays as authored.
 
 **Golden test (reference):** title `std::vector`, serial `01.01.14`, 13 sections, ~30 min, 11
-simulations, 11 practice problems (11 canonical keys), 14 TOC entries, 13 section keys, 11 practice
+simulations, 11 practice problems, 14 TOC entries, 13 section keys, 11 practice
 keys, 5 videos, 9 quizzes, 11 demos, prerequisite, prev/next, 45 files (`T-KB-01`).
 
 ### 5.4 Optional manifests (win over extraction)
@@ -226,7 +229,6 @@ keys, 5 videos, 9 quizzes, 11 demos, prerequisite, prev/next, 45 files (`T-KB-01
     "practiceKeys": ["p0", "p1"],
     "controls": { "section": "input[data-done]", "practice": "input.pchk" }
   },
-  "practice": [{ "key": "p0", "url": "https://vjudge.net/problem/Aizu-ITP2_1_A" }],
   "prerequisites": ["../../../phase-0/1_basics/8_arrays_and_multidimensional_indexing/"],
   "private": ["data/**", "assets/src/**"],
   "runtime": "inject",
@@ -263,8 +265,8 @@ sequenceDiagram
   API->>API: unzip (streaming) or read draft overlay + base manifest
   API->>API: guards → hash (SHA-256) → sniff types → private globs
   API->>ST: upload new objects only (bundle-objects/xx/sha)
-  API->>API: extract metadata, links, search sections, practice items
-  API->>DB: insert files, links, sections, practice items, report
+  API->>API: extract metadata, links, search sections
+  API->>DB: insert files, links, sections, report
   API->>DB: bundle_versions.status = ready | failed
   API-->>A: report
   A->>API: publish (server action)
@@ -284,8 +286,7 @@ W05 missing `<title>`/`lang`/description · W06 `<img>` without `alt` · W08 pub
 private file · W09 image > 2 MB · W10 `localhost`/`file://` links · W12 extracted title/serial ≠
 outline · W13 root-absolute link (`/…`) · W14 `expectedDepth` ≠ node depth · W15 case-only
 duplicates · W16 duplicate serial · **W17 (posts) missing `og:*` / canonical tags** · **W18
-progress controls not found for the configured selectors (sign-in gating can't disable them)** ·
-**W19 practice link with no recognised canonical key (can't auto-verify)**.
+progress controls not found for the configured selectors (sign-in gating can't disable them)**.
 
 **Infos:** orphan files; bundle identical to the current version (no new version); counts.
 
@@ -422,7 +423,7 @@ work under previews), and they receive the runtime block.
 |---|---|
 | Reading-room home `/` | Published roadmaps + latest posts, links back to `eyasir329.dev` |
 | Roadmap root | Title, description, licence, phases with counts; **signed in:** overall progress and "Continue where you left off"; **anonymous:** "Sign in to track your progress" |
-| Phase / module index | Topics with serial, title, standfirst, reading time, status; **signed in:** per-topic progress ("8/13 read · 3/11 solved", verified badges); next unread topic highlighted |
+| Phase / module index | Topics with serial, title, standfirst, reading time, status; **signed in:** per-topic progress ("8/13 read · 3/11 solved"); next unread topic highlighted |
 | Coming soon | Serial, title, position, links to module/neighbours/prerequisites; `noindex` |
 | Private notice / 404 | Roadmap-styled message |
 
@@ -513,4 +514,3 @@ Each version's sections become `bundle_search_sections` rows (heading, plain tex
 
 - Reader bookmarks/notes on topics and posts (runtime extension).
 - Offline reading (service worker on the content origin).
-- Public learner profiles (would require CP handle verification, [20 §6](20-cp-multi-platform-tracking.md)).

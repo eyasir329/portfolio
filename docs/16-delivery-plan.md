@@ -1,10 +1,13 @@
 # 16 — Delivery Plan
 
-> Status: **Draft v0.2** · Related: [00 §9 milestones](00-project-charter.md), [01 PRD](01-product-requirements.md), [15 §8 DoD](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
+> Status: **Draft v0.3** · Related: [00 §9 milestones](00-project-charter.md), [01 PRD](01-product-requirements.md), [15 §8 DoD](15-testing-and-qa.md), [17 Risks](17-risks-and-decisions.md)
 >
 > **Revision 0.2:** re-planned for the HTML blog (on the shared bundle engine), guest accounts with
 > sign-in-gated progress, and CP tracking on 10 judges. The estimate grows from ≈ 100 to **≈ 142
 > developer-days**.
+>
+> **Revision 0.3:** learner CP tracking removed (no `/me/cp`, guest judge sync, extension tokens or
+> practice auto-verification; no CP queue). Estimate **≈ 135 developer-days**.
 
 Estimates are **ideal developer-days** for one developer with AI assistance, ±30%.
 
@@ -17,15 +20,15 @@ Estimates are **ideal developer-days** for one developer with AI assistance, ±3
 | **P0 Plan & audit** | Agree on what to build | — | — | [21](21-audit-checklist.md) signed; `Q-*` answered |
 | **P1 Foundations** | Deployable skeleton: CI, Supabase, auth with owner/editor/guest roles, tokens, shells; spikes answered | EP-01, EP-02, EP-03, spikes | 27.5 | Admin reaches `/admin`; any other Google/GitHub account becomes a guest with 403 on `/admin`; public shell in both themes |
 | **P2 Portfolio core** | All CV content live and editable | EP-04 | 16 | UAT-02, UAT-13 |
-| **P3 Bundle engine & Roadmap Docs** | Content origin serving topics faithfully, with the runtime block | EP-07 | 22 | UAT-04, 05, 06; T-KB-* green |
+| **P3 Bundle engine & Roadmap Docs** | Content origin serving topics faithfully, with the runtime block | EP-07 | 21 | UAT-04, 05, 06; T-KB-* green |
 | **P4 HTML blog** | Write, schedule and publish HTML posts | EP-06 | 9 | UAT-03; T-BLOG-* green |
-| **P5 Reader accounts & progress** | Anonymous read-only, signed-in progress synced, `/me` | EP-11 | 18 | UAT-07, 08, 12; T-RT-*, T-BR-*, T-GU-* green |
-| **P6 CP tracking (owner + guests)** | 10 judges, queue, extension, `/me/cp`, owner CP page | EP-05, EP-12 | 23.5 | UAT-09, 10, 11; T-CPT-* green; queue unattended for 3 days |
+| **P5 Reader accounts & progress** | Anonymous read-only, signed-in progress synced, `/me` | EP-11 | 17.5 | UAT-07, 08, 09, 12; T-RT-*, T-BR-*, T-GU-* green |
+| **P6 Owner CP tracking** | 10 judges, per-platform daily runs, owner extension, public CP page | EP-05, EP-12 | 18.5 | UAT-10, 11; T-CPT-* green; daily runs unattended for 3 days |
 | **P7 3D & motion** | Scenes, motion, fallbacks | EP-08 | 11.5 | UAT-14; 3D budgets met |
 | **P8 Launch** | Search, SEO, privacy, security, a11y, performance, content | EP-09, EP-10 | 14 | Launch checklist [15 §9](15-testing-and-qa.md) |
-| | | **Total** | **≈ 142** | + 20% contingency ≈ **170 days** |
+| | | **Total** | **≈ 135** | + 20% contingency ≈ **162 days** |
 
-**Calendar view:** full-time ≈ 28–34 weeks; half-time ≈ 14–17 months.
+**Calendar view:** full-time ≈ 27–33 weeks; half-time ≈ 13–16 months.
 
 ```mermaid
 flowchart LR
@@ -34,18 +37,17 @@ flowchart LR
   P1 --> P3["P3 Bundle engine and Docs"]
   P3 --> P4["P4 HTML blog"]
   P3 --> P5["P5 Reader accounts and progress"]
-  P2 --> P6["P6 CP tracking"]
-  P5 --> P6
+  P2 --> P6["P6 Owner CP tracking"]
   P2 --> P7["P7 3D and motion"]
-  P4 & P6 & P7 --> P8["P8 Launch"]
+  P4 & P5 & P6 & P7 --> P8["P8 Launch"]
 ```
 
 **Ordering options for the owner (`Q-19`):**
 
 | Option | Sequence | Public launch | Notes |
 |---|---|---|---|
-| **A. Complete** | P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 | ≈ 34 weeks | Everything at once |
-| **B. Readers first** (recommended) | P1 → P3 → P5 → P2 → P4 → launch v1 → P6 → P7 → v1.1 | v1 ≈ 22 weeks | Roadmap + accounts + blog + portfolio first; CP tracking and 3D follow as v1.1 releases |
+| **A. Complete** | P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 | ≈ 32 weeks | Everything at once |
+| **B. Readers first** (recommended) | P1 → P3 → P5 → P2 → P4 → launch v1 → P6 → P7 → v1.1 | v1 ≈ 21 weeks | Roadmap + accounts + blog + portfolio first; owner CP tracking and 3D follow as v1.1 releases |
 | **C. Portfolio first** | P1 → P2 → P7 → launch v0.9 → P3 → P4 → P5 → P6 | v0.9 ≈ 12 weeks | Recruiter-facing site early; docs, blog and accounts later |
 
 ## 2. Technical spikes (time-boxed, P1)
@@ -76,7 +78,7 @@ flowchart LR
 | EP-06 HTML blog | Editor, templates, listings, scheduling, feeds, OG | FR-BLOG-*, FR-ADM-18 |
 | EP-11 Reader accounts & progress | Bridge, reader API, runtime, progress model, `/me`, privacy lifecycle, users & readers admin | FR-PROG-*, FR-GUEST-*, FR-ADM-16/17 |
 | EP-05 CP Journey & GitHub (owner) | GitHub sync, public CP page, contests, overrides | FR-CP-*, FR-SYNC-01 |
-| EP-12 Multi-judge tracking engine | Adapters ×10, queue, extension ingestion, `/me/cp`, practice verification, sync centre | FR-CPT-*, FR-SYNC-02…06, FR-ADM-08 |
+| EP-12 Owner multi-judge engine | Adapters ×10, per-platform runs, canonical keys, owner extension ingestion, sync centre | FR-SYNC-02…06, FR-ADM-08 |
 | EP-08 3D & motion | Scenes and motion | FR-HOME-01, FR-CP-06, FR-GEN-07/08 |
 | EP-09 Search, SEO & analytics | ⌘K search, metadata, sitemaps, analytics, redirects | FR-GEN-03/09, FR-SEO-*, FR-ADM-13 |
 | EP-10 Hardening & launch | Security, privacy, a11y, performance, backups, content | NFR-* |
@@ -119,7 +121,6 @@ flowchart LR
 | US-155 | Outline editor, roadmap settings, link report | EP-07 | M | 2 |
 | US-156 | `/docs` catalog + map | EP-07 | M | 1.5 |
 | US-157 | Search indexing + content-origin sitemap/robots | EP-07 | S | 1 |
-| US-159 | Practice-item extraction + canonical problem keys | EP-07 | S | 1 |
 | US-043 | Tree import (dry run, steps, apply) | EP-07 | S | 2 |
 | US-154 | Bundle CLI + CLI tokens | EP-07 | S | 2 |
 | US-141 | HTML editor: file tree, CodeMirror, assets, sandboxed preview, drafts/autosave, save version | EP-06 | M | 4 |
@@ -132,14 +133,14 @@ flowchart LR
 | US-202 | Reader API (me, progress, summary, visit) + validation + CSRF | EP-11 | M | 2 |
 | US-203 | Reader runtime v1 (gating, sync, reconcile, pending queue, chip) + compatibility tests | EP-11 | M | 4 |
 | US-204 | Progress tables/triggers + progress on generated pages and the docs map | EP-11 | M | 1.5 |
-| US-205 | `/me` dashboard + `/me/roadmaps` | EP-11 | M | 3 |
+| US-205 | `/me` dashboard + `/me/roadmaps` | EP-11 | M | 2.5 |
 | US-206 | `/me/settings`: export, delete, sign out everywhere; deletion job | EP-11 | M | 2 |
 | US-207 | Admin Users (ban/delete) + Readers analytics | EP-11 | M | 2 |
 | US-208 | Privacy/terms updates + inactivity job | EP-11 | M | 0.5 |
 | US-130 | GitHub sync + repo stats | EP-05 | M | 1.5 |
 | US-132 | Public CP page (10 judge cards, charts, heatmap, contests, tags) | EP-05 | M | 3 |
 | US-133 | Contests admin + overrides | EP-05 | M | 1 |
-| US-030 | Adapter framework + Codeforces + queue/worker + budgets | EP-12 | M | 3 |
+| US-030 | Adapter framework + Codeforces + per-platform runs (lock, cursors, budgets) + canonical keys | EP-12 | M | 3 |
 | US-210 | AtCoder adapter | EP-12 | M | 1 |
 | US-211 | UVa (uHunt) adapter | EP-12 | M | 0.5 |
 | US-212 | VJudge adapter | EP-12 | M | 1 |
@@ -147,10 +148,8 @@ flowchart LR
 | US-214 | Toph adapter | EP-12 | S | 1 |
 | US-215 | CodeChef adapter (+ optional CLIST fallback) | EP-12 | S | 1.5 |
 | US-216 | SPOJ, CSES, LightOJ profile adapters (flagged) | EP-12 | S | 1.5 |
-| US-217 | Extension ingestion API + NEUPC-compatible aliases + extension tokens | EP-12 | S | 2 |
-| US-218 | `/me/cp` hub | EP-12 | M | 3 |
-| US-219 | Practice auto-verification | EP-12 | S | 1 |
-| US-131 | Scheduler + sync centre (platform health, queue, kill switches) | EP-12 | M | 1.5 |
+| US-217 | Owner extension ingestion API + NEUPC-compatible aliases | EP-12 | S | 1.5 |
+| US-131 | Per-platform schedules + sync centre (platform health, kill switches, Run now) | EP-12 | M | 1 |
 | US-160 | Shared canvas, View system, capability gate, posters | EP-08 | M | 2.5 |
 | US-161 | S1 Plaster Graph | EP-08 | M | 3 |
 | US-162 | S2 Colonnade + table | EP-08 | S | 3 |
@@ -169,11 +168,9 @@ flowchart LR
 | US-184 | Content entry support + launch checklist | EP-10 | M | 2 |
 
 PRD stories delivered inside other items: **US-042** → US-152 · **US-060** → US-160 · **US-070** →
-US-204 · **US-080/081/082** → US-203/US-201/US-202 · **US-083** → US-212/US-218/US-219 · **US-084** →
-US-217 · **US-085** → US-206 · **US-090** → US-141/US-146 · **US-091** → US-143.
+US-204 · **US-080/081/082** → US-203/US-201/US-202 · **US-085** → US-206 · **US-090** → US-141/US-146 · **US-091** → US-143.
 
-Post-launch candidates: comments via template, view counter, public learner profiles with handle
-verification, reader bookmarks, email magic-link sign-in, CLIST-wide contest calendar, Bengali
+Post-launch candidates: comments via template, view counter, reader bookmarks, email magic-link sign-in, CLIST-wide contest calendar, Bengali
 localisation.
 
 ## 5. Definition of Ready

@@ -1,6 +1,6 @@
 # 18 — Content Inventory & Seed-Data Mapping
 
-> Status: **Draft v0.2** (rev 0.2: owner handles on all 10 judges; HTML launch posts; new table names) · Source: `Eyasir_Ahamed_CV.tex` ("Last updated in August 2026") and the
+> Status: **Draft v0.3** (owner handles on all 10 judges; HTML launch posts; learner CP tracking removed) · Source: `Eyasir_Ahamed_CV.tex` ("Last updated in August 2026") and the
 > owner's brief · Related: [07 DB](07-database-design.md), [11 Content modules](11-content-modules.md)
 
 Everything the CV already gives us, where it goes in the database, and what's still missing. Seed rows
@@ -78,11 +78,11 @@ page ("NEUPC tracks members' progress").
 | Item | Value | Target |
 |---|---|---|
 | Codeforces | handle `eyasir329`, max rating 1101 (sync will refresh) | `cp_accounts` (owner, public, primary, sync on) |
-| Total solved | "1000+ problems solved across judges" | Computed from the owner's public accounts on all judges (`v_public_stats`); keep `override.solved_label = "1000+"` until the synced total is complete |
+| Total solved | "1000+ problems solved across judges" | Computed from the owner's accounts on all judges (`v_public_stats`); keep `override.solved_label = "1000+"` until the synced total is complete |
 | ICPC | **ICPC 2025 Asia Dhaka Regional** (host BUBT): **112th overall**, **Mymensingh Divisional Champion**, of **300+** teams | `cp_contests` (featured, series ICPC) |
 | IUPCs (ranked) | MU, NSUCEC and BUET inter-university contests: ranked 40th–75th (2025–2026) | 3 × `cp_contests`; **per-contest rank, date and team needed** (`Q-10`) |
 | IUPCs (participation) | 7+ other national onsite contests including UU, DUET, UIU, KUET, IUT IUPCs | `cp_contests` rows (rank optional) |
-| Other judges | Not listed in the CV | **Owner handles needed for AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES (numeric id), Toph, VJudge** → `cp_accounts` (public). Judges without public solved lists need the extension ([20 §2](20-cp-multi-platform-tracking.md)) |
+| Other judges | Not listed in the CV | **Owner handles needed for AtCoder, LeetCode, CodeChef, LightOJ, UVa, SPOJ, CSES (numeric id), Toph, VJudge** → `cp_accounts` (shown on site). Judges without public solved lists need the extension ([20 §2](20-cp-multi-platform-tracking.md)) |
 
 ## 6. Experience & leadership → `experiences`
 

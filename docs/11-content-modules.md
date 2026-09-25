@@ -1,10 +1,12 @@
 # 11 — Content Modules
 
-> Status: **Draft v0.2** · Related: [01 PRD §3](01-product-requirements.md), [03 IA §5](03-information-architecture.md), [07 DB §4](07-database-design.md), [09 Admin §4](09-admin-panel.md), [10 Bundles](10-roadmap-docs-system.md), [18 Content inventory](18-content-inventory.md)
+> Status: **Draft v0.3** · Related: [01 PRD §3](01-product-requirements.md), [03 IA §5](03-information-architecture.md), [07 DB §4](07-database-design.md), [09 Admin §4](09-admin-panel.md), [10 Bundles](10-roadmap-docs-system.md), [18 Content inventory](18-content-inventory.md)
 >
 > **Revision 0.2:** the Blog (§7) is now **full HTML** on the bundle engine. CP Journey (§6) uses all
 > 10 judges. Reader accounts (§13) are new. Markdown remains for site-rendered text fields (bio,
 > case studies, contest write-ups, privacy page).
+>
+> **Revision 0.3:** CP Journey stays the owner's public record; guests have no CP tracking.
 
 ---
 
@@ -21,7 +23,7 @@
 | Section | Data source | Rule |
 |---|---|---|
 | Hero | `profile` + S1 scene | Always |
-| Proof strip | `v_public_stats` (combined distinct solves across the owner's public judge accounts, or override) | Each figure links to evidence |
+| Proof strip | `v_public_stats` (combined distinct solves across the owner's judge accounts, or override) | Each figure links to evidence |
 | Selected work | Featured projects (max 3) | Hidden if none |
 | Contest record | Owner's primary judge accounts + featured contests | ICPC first |
 | Writing | 3 latest published posts (listing metadata) → links to the content origin | Hidden if none |
@@ -69,7 +71,7 @@ flowchart LR
     TO["Toph"]
     VJ["VJudge"]
   end
-  Judges --> Q["cp_sync_jobs + worker"]
+  Judges --> Q["daily run per platform"]
   EXT["Owner's browser extension"] --> ING["/api/cp/ext/*"]
   Q --> DB[("cp_accounts, cp_solves, cp_rating_changes")]
   ING --> DB
@@ -83,14 +85,14 @@ flowchart LR
 
 | Module | Data | Notes |
 |---|---|---|
-| Summary line | Combined distinct solves (canonical keys, all public accounts) or the owner's override ("1000+"); best CF rating; contests | "Data as of {time}" |
+| Summary line | Combined distinct solves (canonical keys, all of the owner's shown accounts) or the owner's override ("1000+"); best CF rating; contests | "Data as of {time}" |
 | Judge cards (10) | `cp_accounts` where public and shown | Rating/max/rank only for rated judges (CF, AtCoder, LeetCode, CodeChef, Toph); solved counts for all; "via extension" note where relevant |
 | Colonnade (3D) + table | `cp_activity_monthly_public` | S2 scene |
 | Rating charts | `cp_rating_changes` per rated judge | Toggle between judges; accessible table |
 | Heatmap | `cp_activity_days` combined | Summary sentence for screen readers |
 | Onsite contests | `cp_contests` | ICPC Dhaka 2025 featured; IUPC ranks per contest (`Q-10`) |
 | Tags & difficulty | `cp_solves` ⋈ `cp_problems` | Where tags exist |
-| Links | CP roadmap, NEUPC, "Track your own progress" → `/login` | — |
+| Links | CP roadmap, NEUPC | — |
 
 ### 6.3 Override precedence
 
@@ -186,13 +188,11 @@ Server action: Zod → Turnstile `siteverify` → rate limit → insert (secret 
 ## 12. Legal pages
 
 `/privacy` covers: the contact form; cookieless analytics; **accounts** (what we store from
-Google/GitHub, reading progress, judge handles and solves, extension data, retention, export and
-deletion); strictly necessary auth cookies on both origins; judge data sources. Licence notice in
-the footer (`Q-15`). A short `/terms` page covers acceptable use of accounts (no abuse,
+Google/GitHub, reading progress, retention, export and deletion); strictly necessary auth cookies
+on both origins; where the owner's CP data comes from. Licence notice in the footer (`Q-15`). A short `/terms` page covers acceptable use of accounts (no abuse,
 automated sign-ups, or scraping of other users).
 
 ## 13. Reader accounts
 
 Guest sign-in, the reader panel (`/me`), sign-in-gated progress and privacy lifecycle are specified
-in [19](19-guest-accounts-and-progress.md). CP tracking for guests is in
-[20](20-cp-multi-platform-tracking.md).
+in [19](19-guest-accounts-and-progress.md). Guests don't have CP tracking (removed in revision 0.3).

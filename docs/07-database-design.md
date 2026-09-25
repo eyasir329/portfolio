@@ -1,10 +1,13 @@
 # 07 — Database Design (Supabase / Postgres)
 
-> Status: **Draft v0.2** · Related: [06 Architecture](06-system-architecture.md), [08 Security](08-auth-and-security.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [19 Guest accounts](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md), [18 Content inventory](18-content-inventory.md)
+> Status: **Draft v0.3** · Related: [06 Architecture](06-system-architecture.md), [08 Security](08-auth-and-security.md), [10 Bundles & Docs](10-roadmap-docs-system.md), [19 Guest accounts](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md), [18 Content inventory](18-content-inventory.md)
 >
 > **Revision 0.2:** accounts & progress tables (§4.9); CP tables are now **per user**, with
 > canonical problems and a sync queue (§4.3); the KB storage tables are generalised into a
 > **bundle engine** shared by roadmap nodes and blog posts (§4.6); posts lose `body_md` (§4.5).
+>
+> **Revision 0.3:** learner CP tracking removed. CP tables are **owner-only** again (no `user_id`,
+> visibility, sync queue or practice-verification tables); guests own only reading-progress rows.
 
 ---
 
@@ -45,11 +48,8 @@ create type bundle_version_status as enum ('processing', 'ready', 'failed');
 create type bundle_version_source as enum ('upload', 'bulk', 'cli', 'editor', 'rollback');
 create type bundle_import_status as enum ('uploaded', 'analysing', 'awaiting_confirmation', 'applying', 'done', 'failed', 'cancelled');
 create type runtime_mode         as enum ('inject', 'self', 'off');
-create type progress_source      as enum ('self', 'verified');
-create type cp_visibility        as enum ('private', 'public');
 create type cp_account_status    as enum ('pending', 'syncing', 'synced', 'needs_extension', 'failing', 'paused');
 create type cp_solve_source      as enum ('api', 'scrape', 'extension', 'vjudge', 'clist', 'manual');
-create type cp_job_status        as enum ('queued', 'running', 'done', 'failed', 'cancelled');
 ```
 
 ## 3. Entity-relationship diagrams
@@ -73,17 +73,15 @@ erDiagram
   certifications }o--o| media : certificate_image
 ```
 
-### 3.2 Competitive programming (owner + guests)
+### 3.2 Competitive programming (owner only)
 
 ```mermaid
 erDiagram
-  users ||--o{ cp_accounts : links
   cp_platforms ||--o{ cp_accounts : hosts
   cp_accounts ||--o{ cp_solves : solved
   cp_problems ||--o{ cp_solves : canonical
   cp_accounts ||--o{ cp_rating_changes : history
   cp_accounts ||--o{ cp_activity_days : activity
-  cp_accounts ||--o{ cp_sync_jobs : queued
   cp_contests ||--o{ cp_contest_media : photos
   github_profile ||--o{ github_repos : owns
 ```
@@ -112,7 +110,6 @@ erDiagram
   bundle_objects ||--o{ bundle_version_files : content
   bundle_versions ||--o{ bundle_search_sections : indexed
   bundle_versions ||--o{ bundle_links : outbound_links
-  bundle_versions ||--o{ bundle_practice_items : practice
   bundle_import_jobs ||--o{ bundle_versions : produced
   bundle_drafts }o--o| bundle_versions : based_on
   html_templates ||--|| bundle_versions : template_files
@@ -151,8 +148,8 @@ Notation: **PK**, **FK**, **UQ**, `?` nullable. `created_at`/`updated_at` omitte
 **`profile`** (singleton, `id smallint PK check (id = 1)`): `full_name`, `headline`, `positioning`,
 `short_bio`, `long_bio_md`, `location`, `email_public citext?`, `phone text?` + `show_phone bool
 default false`, `portrait_media_id?`, `availability jsonb`, `current_resume_id?`, `timezone default
-'Asia/Dhaka'`, **`owner_user_id uuid? FK auth.users`** (links the owner's account, for public CP
-accounts and `/me`).
+'Asia/Dhaka'`, **`owner_user_id uuid? FK auth.users`** (links the owner's user account, e.g. for
+`/me`).
 
 **`site_settings`** (`key text PK`, `value jsonb`): `seo`, `nav`, `home_sections`, `flags`,
 `announcement`, `footer`, `privacy_md`, `docs_defaults`, `blog_defaults`, **`auth`** (enabled
@@ -184,56 +181,46 @@ unchanged from revision 0.1 (`projects.body_md` stays Markdown; case studies are
 | rank_scheme | jsonb? | rating → title/colour bands |
 | budget_per_min | int | politeness budget |
 | min_interval_ms | int | |
-| next_allowed_at | timestamptz | shared throttle across workers |
+| next_allowed_at | timestamptz | throttle between runs (e.g. after a 429) |
 | enabled | bool | global kill switch (admin) |
 | scraping_enabled | bool | per-platform flag for HTML adapters (`Q-29`) |
 | health | jsonb | last success/failure, error rate (admin sync centre) |
 
-**`cp_accounts`** (replaces `cp_profiles`; owner **and** guests)
+**`cp_accounts`** (replaces `cp_profiles`; **the owner's accounts only**)
 
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid PK | |
-| user_id | uuid FK auth.users | owner or guest |
 | platform_id | smallint FK | |
-| handle | text | UQ(user_id, platform_id, handle) |
+| handle | text | UQ(platform_id, handle) |
 | platform_user_id | text? | uHunt id (UVa), numeric id (CSES) |
-| visibility | cp_visibility | `private` for guests (forced by RLS check); `public` allowed only for the owner's accounts |
-| is_primary | bool | per user and platform |
+| is_primary | bool | per platform |
 | status | cp_account_status | |
-| verified_at | timestamptz? | handle ownership verified (Could) |
 | sync_enabled | bool | |
 | sync_state | jsonb | cursors: CF last submission id, AtCoder `from_second`, VJudge offset, uHunt last id |
 | current_rating, max_rating | int? | |
 | rank_title, max_rank_title | text? | |
 | solved_count | int? | distinct canonical solves on this account |
 | contests_count | int? | |
-| override | jsonb | owner-only manual values (e.g. `"solved_label": "1000+"`) |
+| override | jsonb | manual values (e.g. `"solved_label": "1000+"`) |
 | last_synced_at, last_error | timestamptz?, text? | |
 | consecutive_failures | smallint | |
 | sort_order, show_on_site | int, bool | owner's public page |
 
 **`cp_problems`** (shared canonical catalogue): `problem_key text PK` (`codeforces:704A`),
 `platform_id`, `platform_problem_id`, `name?`, `url`, `difficulty int?`, `tags text[]`,
-`updated_at`. Filled from judge problem lists (Codeforces problemset, AtCoder problems.json), from
-solves and from bundle practice items.
+`updated_at`. Filled from judge problem lists (Codeforces problemset, AtCoder problems.json) and
+from the owner's solves.
 
-**`cp_solves`**: `id bigserial`, `account_id FK`, `user_id` (denormalised for RLS/indexes),
-`problem_key FK → cp_problems`, `first_ac_at timestamptz`, `source cp_solve_source`,
-`external_submission_id text?`. UQ(account_id, problem_key). Indexes: `(user_id, problem_key)`,
-`(user_id, first_ac_at)`.
+**`cp_solves`**: `id bigserial`, `account_id FK`, `problem_key FK → cp_problems`, `first_ac_at
+timestamptz`, `source cp_solve_source`, `external_submission_id text?`. UQ(account_id, problem_key).
+Indexes: `(problem_key)` (cross-judge dedupe), `(first_ac_at)`.
 
 **`cp_rating_changes`**: `id`, `account_id FK`, `external_contest_id`, `contest_name`,
 `contest_date`, `rank`, `old_rating`, `new_rating`. UQ(account_id, external_contest_id).
 
 **`cp_activity_days`**: `account_id`, `day date`, `accepted int`, `submissions int`, PK(account_id,
 day).
-
-**`cp_sync_jobs`** (queue): `id bigserial`, `account_id FK`, `user_id`, `reason` (link | manual |
-scheduled | extension), `priority smallint` (manual > link > scheduled), `run_after timestamptz`,
-`attempts smallint`, `status cp_job_status`, `locked_by text?`, `locked_at?`, `finished_at?`,
-`result jsonb?`, `error text?`. Partial index on `(status, run_after, priority)` where `status =
-'queued'`.
 
 **`cp_contests`**, **`cp_contest_media`**, **`cp_milestones`**: the owner's onsite contests and
 milestones, unchanged.
@@ -315,9 +302,6 @@ PK(version_id, path).
 **`bundle_search_sections`**: `id`, `version_id`, `subject_type`, `subject_id`, `anchor?`, `heading`,
 `body`, `tsv` (generated, weighted), GIN(tsv).
 
-**`bundle_practice_items`** (new): `version_id`, `key text` (`p0`…), `title`, `url`, `problem_key
-text?` (canonical, FK-less to allow unknowns), PK(version_id, key). Index on `problem_key`.
-
 **`bundle_drafts`** (new, editor working copy): `id`, `subject_type`, `subject_id`,
 `base_version_id?`, `files jsonb` (overlay: `{ "index.html": { "text": "…" }, "assets/a.png": {
 "sha256": "…" }, "old.css": { "deleted": true } }`), `updated_by`, `updated_at`. One active draft per
@@ -341,12 +325,12 @@ bundle_versions` (template files are a bundle), `is_default bool`.
 
 **`audit_log`**: unchanged (admin actions; also logs bans, deletions, role changes).
 
-**`private.api_tokens`** (admin CLI **and** guest extension tokens): `id`, `user_id`, `name`,
-`token_hash`, `prefix`, `scopes text[]` (`bundle:read`, `bundle:write`, `bundle:publish` for admins;
-`cp:ingest` for any user), `expires_at`, `last_used_at?`, `revoked_at?`. A check function makes sure
-guests can only hold `cp:ingest`.
+**`private.api_tokens`** (**admins only**: bundle CLI and the owner's browser extension): `id`,
+`user_id`, `name`, `token_hash`, `prefix`, `scopes text[]` (`bundle:read`, `bundle:write`,
+`bundle:publish`, `cp:ingest`), `expires_at`, `last_used_at?`, `revoked_at?`. A check function
+rejects tokens for users without an active `admin_users` row.
 
-**`sync_runs`**: owner-level runs (GitHub, daily CP scheduler summary).
+**`sync_runs`**: every run of GitHub and of each judge platform (status, stats, cursor progress, error).
 
 **`private.rate_limits`**: unchanged.
 
@@ -372,11 +356,11 @@ guests can only hold `cp:ingest`.
 `used_at?`.
 
 **`reading_progress`**: `user_id`, `node_id FK kb_nodes`, `key text` (`s4`, `p2`), `done bool`,
-`source progress_source`, `updated_at`, PK(user_id, node_id, key). Writes via the reader API
+`updated_at`, PK(user_id, node_id, key). Writes via the reader API
 (service key after session validation) or the verification job.
 
 **`topic_progress`** (maintained by trigger on `reading_progress` and on visits): `user_id`,
-`node_id`, `sections_done`, `practice_done`, `practice_verified`, `started_at`, `completed_at?`,
+`node_id`, `sections_done`, `practice_done`, `started_at`, `completed_at?`,
 `last_visited_at?`, `last_anchor?`, PK(user_id, node_id). Totals come from `kb_nodes.section_keys` /
 `practice_keys` at read time, so they follow republished topics.
 
@@ -388,9 +372,9 @@ guests can only hold `cp:ingest`.
 
 | View | Purpose | Access |
 |---|---|---|
-| `v_public_stats` | Proof-strip numbers: combined distinct solves across the owner's **public** accounts (override-aware), CF max rating, repos, stars, projects, published topics and posts | anon |
+| `v_public_stats` | Proof-strip numbers: combined distinct solves across the owner's shown accounts (override-aware), CF max rating, repos, stars, projects, published topics and posts | anon |
 | `v_timeline` | Chronology union | anon |
-| `cp_activity_monthly_public` | Monthly accepted solves for the owner's public accounts (Colonnade) | anon |
+| `cp_activity_monthly_public` | Monthly accepted solves for the owner's shown accounts (Colonnade) | anon |
 | `kb_roadmap_outline` | Flattened tree with status, serials, counts | anon |
 | `v_my_roadmap_progress` | Per-user, per-roadmap totals (sections done/total, topics completed) | `authenticated`, own rows (`security_invoker`) |
 | `v_reader_analytics` | Aggregates only: registered/active users, completion per topic, drop-off section per topic | admin (`security_invoker` + admin check) |
@@ -405,10 +389,7 @@ guests can only hold `cp:ingest`.
 | `public.custom_access_token_hook(event)` | **Revised:** `app_role` = `owner` / `editor` (active allowlist row) or `guest`; adds `user_status`; banned users get no role |
 | `private.handle_new_user()` | Trigger on `auth.users` insert: creates `user_profiles`; links `admin_users.user_id` by email |
 | `private.recompute_topic_progress()` | Trigger on `reading_progress`: updates `topic_progress` and `reader_activity_days` |
-| `private.verify_practice(user_id)` | Upserts `reading_progress(source='verified')` for published practice items whose `problem_key` is in the user's `cp_solves` |
-| `private.claim_cp_jobs(worker text, n int)` | `update … where id in (select id from cp_sync_jobs where status='queued' and run_after <= now() order by priority desc, run_after for update skip locked limit n) returning *` |
-| `private.enqueue_scheduled_cp_syncs()` | Daily: enqueue owner accounts + guests active in the last 14 days (weekly for 15–90 days) |
-| `private.delete_user_data(user_id)` | Called by the deletion job: revokes sessions and tokens, then deletes the auth user (cascades) |
+| `private.delete_user_data(user_id)` | Called by the deletion job: revokes sessions, then deletes the auth user (cascades to profile and progress) |
 | `public.search_all(q, lim)` | FTS over projects, published bundle sections (posts + topics) |
 | `public.increment_view(entity, id)` | Optional view counter |
 | `private.rate_limit(key, max, per)` | Generic limiter |
@@ -424,13 +405,11 @@ create policy "owner of the row reads" on reading_progress for select to authent
 -- no insert/update policies for authenticated: writes go through the reader API / server actions,
 -- which validate keys against kb_nodes.section_keys/practice_keys, then write with the service key.
 
--- public CP data pattern
-create policy "public accounts are readable" on cp_accounts for select to anon, authenticated
-  using (visibility = 'public' and show_on_site);
-create policy "users read their own accounts" on cp_accounts for select to authenticated
-  using (user_id = (select auth.uid()));
-create policy "users manage their own accounts" on cp_accounts for insert to authenticated
-  with check (user_id = (select auth.uid()) and visibility = 'private');
+-- owner CP data: public read of shown accounts, admin writes
+create policy "shown accounts are readable" on cp_accounts for select to anon, authenticated
+  using (show_on_site);
+create policy "admins manage accounts" on cp_accounts for all to authenticated
+  using ((select private.is_admin())) with check ((select private.is_admin()));
 ```
 
 ### 7.1 Policy matrix
@@ -440,12 +419,11 @@ create policy "users manage their own accounts" on cp_accounts for insert to aut
 | Portfolio content, profile, settings (public keys), media, tags, series, skills, platforms, redirects | read published | read published | R/W | — |
 | posts, kb_roadmaps, kb_nodes | read published (nodes: planned + published) | same | R/W | delete |
 | bundle_* (versions, files, links, drafts, imports, templates, objects), content_redirects | ❌ (content origin uses the server key) | ❌ | R/W | purge |
-| bundle_search_sections, bundle_practice_items | via `search_all` / server only | same | R | — |
+| bundle_search_sections | via `search_all` / server only | same | R | — |
 | user_profiles | ❌ | read own; update `display_name`, `timezone` | read all | ban, delete |
 | reading_progress, topic_progress, reader_activity_days | ❌ | read own (writes via API) | aggregate views only | — |
-| cp_accounts | read `public` + `show_on_site` | read/insert/update/delete own (`private` only) | R/W owner's public accounts | — |
-| cp_solves, cp_rating_changes, cp_activity_days | read rows of public accounts | read own | R | — |
-| cp_sync_jobs | ❌ | read own | R | cancel |
+| cp_accounts | read `show_on_site` rows | same as anon | R/W | platform kill switches |
+| cp_solves, cp_rating_changes, cp_activity_days | read rows of shown accounts | same as anon | R (writes by sync jobs) | — |
 | cp_problems | read | read | R/W | — |
 | cp_contests, cp_milestones, github_* | read published / shown | same | R/W | — |
 | messages | ❌ | ❌ | R/W status | delete |
@@ -469,14 +447,13 @@ pgTAP tests cover every row of this matrix (T-DB-*, T-GU-*).
 | Job | Schedule (UTC) | Action |
 |---|---|---|
 | `sync-github` | `05 3 * * *` | → `/api/cron/sync-github` |
-| `cp-scheduler` | `10 3 * * *` | `private.enqueue_scheduled_cp_syncs()` |
-| `cp-worker` | `* * * * *` | → `/api/cron/cp-worker` (claims jobs, 50 s budget) |
+| `sync-cp-{platform}` (10 jobs) | `10 3 * * *`, `15 3 * * *`, … (5 min apart) | → `/api/cron/sync-cp?platform=…` (50 s budget, cursor-resumable) |
 | `publish-due-posts` | `*/5 * * * *` | `private.publish_due_posts()` |
 | `prune-rate-limits` | `0 * * * *` | delete old windows |
 | `reader-sessions-cleanup` | `20 * * * *` | delete expired/revoked sessions and used bridge codes |
 | `account-deletions` | `40 3 * * *` | process `deletion_requested_at` (≤ 30 days) |
 | `inactive-accounts` | `50 3 * * 1` | notices after 24 months inactive; deletion 30 days after notice (`Q-34`) |
-| `retention` | `30 3 * * 0` | messages 12 months, sync_runs 90 days, finished cp_sync_jobs 14 days, audit_log 24 months |
+| `retention` | `30 3 * * 0` | messages 12 months, sync_runs 90 days, audit_log 24 months |
 | `bundle-gc` | `0 4 * * 0` | → `/api/cron/bundle-gc` |
 | `bundle-uploads-cleanup` | `15 4 * * *` | → `/api/cron/bundle-uploads-cleanup` |
 | `blocked-domains-refresh` | `0 5 1 * *` | → `/api/cron/blocked-domains` |
@@ -495,9 +472,9 @@ pgTAP tests cover every row of this matrix (T-DB-*, T-GU-*).
 
 | Table | Rows | Size |
 |---|---|---|
-| cp_solves | owner ~1–3k + 500 active guests × ~1k ≈ **0.5M** | ~150 MB with indexes (**largest**) |
-| cp_activity_days | ≈ 500 × 365 × 2 ≈ 0.4M | ~30 MB |
-| reading_progress | ≈ 2,000 users × 20 topics × 20 keys ≈ 0.8M (worst case) | ~80 MB |
+| reading_progress | ≈ 2,000 users × 20 topics × 20 keys ≈ 0.8M (worst case) | ~80 MB (**largest**) |
+| topic_progress, reader_activity_days | ≈ 40k + 100k | ~15 MB |
+| cp_solves, cp_activity_days, cp_rating_changes (owner) | ~5k | < 5 MB |
 | bundle tables | ~66 topics + ~30 posts, ~3 versions each | ~15 MB |
 | Everything else | — | < 30 MB |
-| **Total** | | **~300 MB worst case** vs the 500 MB free limit → the upgrade trigger at 350 MB ([14 §9](14-devops-and-environments.md)) is realistic within year 1 if the guest base grows |
+| **Total** | | **~150 MB worst case** vs the 500 MB free limit; the upgrade trigger at 350 MB ([14 §9](14-devops-and-environments.md)) is unlikely in year 1 |

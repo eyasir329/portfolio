@@ -1,9 +1,12 @@
 # 17 — Risks & Architecture Decision Records
 
-> Status: **Draft v0.2** · Related: every document; this is where the "why" is kept.
+> Status: **Draft v0.3** · Related: every document; this is where the "why" is kept.
 >
 > **Revision 0.2:** risks R-16…R-23 added; ADR-003, 004, 005 revised; ADR-007 narrowed (superseded
 > for the blog by ADR-014); ADR-014…020 added.
+>
+> **Revision 0.3:** learner CP tracking removed; ADR-017/018 apply to the owner's accounts only;
+> ADR-019 revised (no queue); R-13, R-19, R-21 downgraded.
 
 ---
 
@@ -13,7 +16,7 @@ L = likelihood, I = impact (1–3). Score = L × I.
 
 | ID | Risk | L | I | Score | Mitigation | Owner |
 |---|---|:-:|:-:|:-:|---|---|
-| R-01 | **Scope is large for one developer** (≈ 142 dev-days) | 3 | 3 | 9 | Phased releases; option B "readers first" (v1 at ≈ 22 weeks, then CP and 3D as v1.1); strict MoSCoW | Owner |
+| R-01 | **Scope is large for one developer** (≈ 135 dev-days) | 3 | 3 | 9 | Phased releases; option B "readers first" (v1 at ≈ 21 weeks, then owner CP tracking and 3D as v1.1); strict MoSCoW | Owner |
 | R-02 | Supabase free project pauses | 1 | 3 | 3 | Every-minute worker + uptime pings; runbook | Dev |
 | R-03 | Copyright exposure from `data/` excerpts | 2 | 3 | 6 | Private by default (`Q-14`) | Owner |
 | R-04 | 3D hurts performance/accessibility | 2 | 2 | 4 | Gate, posters, budgets | Dev |
@@ -25,15 +28,15 @@ L = likelihood, I = impact (1–3). Score = L × I.
 | R-10 | Admin lockout | 1 | 3 | 3 | Break-glass runbook; backup owner email | Owner |
 | R-11 | Content bottleneck | 3 | 2 | 6 | Content timeline; sections hide when empty | Owner |
 | R-12 | Platform/API churn (Next.js, Supabase keys) | 2 | 2 | 4 | New-format keys; pinning; Renovate | Dev |
-| R-13 | Vercel Hobby limits (invocations/CPU from the worker and reader API) | 2 | 2 | 4 | Worker cadence adjustable (1–5 min); batched runtime writes; upgrade trigger | Owner |
+| R-13 | Vercel Hobby limits (invocations/CPU, mostly from the reader API) | 1 | 2 | 2 | Batched runtime writes; CP sync is only ~10 runs/day; upgrade trigger | Owner |
 | R-14 | Design feels generic | 2 | 2 | 4 | Art-direction spike + sign-off | Owner |
 | R-15 | Teammates' privacy on contest entries | 2 | 1 | 2 | Consent; names optional | Owner |
 | R-16 | **Guest personal data**: a leak or misuse would harm readers and trust | 1 | 3 | 3 | Data minimisation; RLS own-rows with pgTAP; aggregate-only admin views; export/delete; privacy review (US-185); incident runbook | Owner + dev |
 | R-17 | **Sign-up abuse / bot accounts** consume quotas | 2 | 1 | 2 | OAuth-only; disposable-domain block; bans; per-user limits | Dev |
 | R-18 | **Runtime reconciliation conflicts with a bundle's own scripts** (e.g. a future generator writes progress differently) | 2 | 2 | 4 | SP-09 prototype; `self`/`off` runtime modes; W18; per-roadmap selectors; T-RT suite on every generator change | Dev |
-| R-19 | **Database growth from guest solves/progress** exceeds the free tier | 2 | 2 | 4 | Store accepted solves only; pause inactive users; retention; upgrade trigger at 350 MB | Owner |
+| R-19 | **Database growth from guest reading progress** exceeds the free tier | 1 | 2 | 2 | ~150 MB worst case in year 1; inactive-account policy; upgrade trigger at 350 MB | Owner |
 | R-20 | **Anonymous-gating bypass** (reader blocks the runtime and ticks locally) | 3 | 1 | 3 | Accepted: UX rule, not security; nothing syncs without an account ([19 §3.4](19-guest-accounts-and-progress.md)) | Owner |
-| R-21 | **Extension maintenance burden** (judge DOM changes break content scripts) | 2 | 2 | 4 | Reuse the NEUPC extension (one codebase for both projects); compatibility aliases; extension is optional | Owner |
+| R-21 | **Extension maintenance burden** (judge DOM changes break content scripts) | 1 | 1 | 1 | Only the owner uses it; reuse the NEUPC extension (one codebase for both projects); optional | Owner |
 | R-22 | **Terms-of-service complaints from a judge** about automated reads | 1 | 2 | 2 | Public pages only, low frequency, identified client, robots.txt, immediate kill switch | Owner |
 | R-23 | **Blog SEO** on a subdomain instead of the main domain | 2 | 1 | 2 | Main-domain redirects, sitemaps, cross-links; revisit after 6 months of Search Console data (`Q-27`) | Owner |
 
@@ -94,7 +97,7 @@ Unchanged.
 Unchanged; now indexes bundle sections of posts and topics.
 
 ### ADR-010 — pg_cron + pg_net scheduler
-Unchanged; now also triggers the every-minute CP worker.
+Unchanged; now also triggers the daily per-platform CP runs.
 
 ### ADR-011 — Tailwind v4 tokens + shadcn/ui for admin
 Unchanged.
@@ -140,7 +143,8 @@ Unchanged; external callers now include the reader runtime, the browser extensio
   (uncacheable).
 
 ### ADR-017 — Judge adapters: API first, scraping behind flags, extension for the rest
-- **Context:** The 10 judges range from official APIs to no public data at all. The owner's NEUPC
+- **Context:** The owner's public CP page covers 10 judges, which range from official APIs to no public
+  data at all (learners have no CP tracking since 0.3). The owner's NEUPC
   already solved this in practice.
 - **Decision:** Port NEUPC's adapters to TypeScript. Order of preference: official/community API →
   public profile page (flagged, polite) → browser extension ingestion (NEUPC-compatible) → CLIST
@@ -151,16 +155,19 @@ Unchanged; external callers now include the reader runtime, the browser extensio
   credentials (unacceptable).
 
 ### ADR-018 — Canonical problem keys
-- **Decision:** Every solve and every roadmap practice link is normalised to `{judge}:{id}`, so
-  VJudge and origin-judge solves deduplicate and practice items can be auto-verified.
-- **Consequences:** One shared parser with table-driven tests; unknown URLs aren't verified.
+- **Decision:** Every one of the owner's solves is normalised to `{judge}:{id}`, so
+  VJudge and origin-judge solves deduplicate in the owner's combined total.
+- **Consequences:** One shared parser with table-driven tests; unknown ids are kept but not deduplicated.
 
-### ADR-019 — Database-backed job queue
-- **Decision:** `cp_sync_jobs` + `FOR UPDATE SKIP LOCKED` + pg_cron worker every minute; per-platform
-  budgets stored in `cp_platforms`.
-- **Consequences:** No external queue service; throughput ≈ 600 account syncs/hour (Codeforces-bound).
-- **Alternatives:** Upstash/QStash, Inngest or Trigger.dev (another service and bill); Vercel Cron
-  (daily only on Hobby).
+### ADR-019 (revised in 0.3) — Per-platform scheduled runs instead of a job queue
+- **Context:** In 0.2 a DB queue served many guest accounts. With learner CP tracking removed, only
+  the owner's ~10 accounts are synced.
+- **Decision:** One pg_cron job per platform per day (staggered), each calling
+  `/api/cron/sync-cp?platform=…` with an advisory lock, a 50 s budget and a resumable cursor;
+  "Run now" per platform in admin. The `cp_sync_jobs` queue is withdrawn.
+- **Consequences:** Much simpler; no worker every minute; partial backfills finish over successive
+  runs.
+- **Alternatives:** Keep the queue (unneeded complexity); an external job service.
 
 ### ADR-020 — Generalised bundle engine (`bundle_*` tables with subjects)
 - **Decision:** Replace `kb_*` storage tables with `bundle_*` tables keyed by `(subject_type,
@@ -174,3 +181,4 @@ Unchanged; external callers now include the reader runtime, the browser extensio
 |---|---|---|---|
 | 2026-09-24 | ADR-001…013 | Proposed (revision 0.1) | Planning |
 | 2026-09-25 | ADR-003, 004, 005 revised; 007 narrowed; ADR-014…020 added | Proposed (revision 0.2): HTML blog, guest accounts, 10-judge tracking | Planning |
+| 2026-09-25 | ADR-017, 018 narrowed to owner-only; ADR-019 revised (no queue) | Proposed (revision 0.3): learner CP tracking removed | Owner request |

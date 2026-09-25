@@ -1,9 +1,12 @@
 # 02 — Non-Functional Requirements
 
-> Status: **Draft v0.2** · Related: [05 3D](05-3d-experience.md), [08 Security](08-auth-and-security.md), [14 DevOps](14-devops-and-environments.md), [15 QA](15-testing-and-qa.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
+> Status: **Draft v0.3** · Related: [05 3D](05-3d-experience.md), [08 Security](08-auth-and-security.md), [14 DevOps](14-devops-and-environments.md), [15 QA](15-testing-and-qa.md), [19 Guests](19-guest-accounts-and-progress.md), [20 CP tracking](20-cp-multi-platform-tracking.md)
 >
 > **Revision 0.2:** new targets for the reader runtime and reader API (PERF-13/14), guest privacy
 > (PRIV-07…10), open registration (SEC-10…12), progress durability (REL-07) and judge-sync capacity.
+>
+> **Revision 0.3:** judge sync is owner-only (learner CP tracking removed); guest data is limited to
+> account + reading progress.
 
 Each NFR is measurable and has a verification method. "p75" means the 75th percentile of real-user
 field data (Vercel Speed Insights), measured on mobile unless stated.
@@ -28,7 +31,7 @@ field data (Vercel Speed Insights), measured on mobile unless stated.
 | NFR-PERF-12 | Admin responsiveness | List views ≤ 1 s for 1,000 rows (server pagination); saves ≤ 1 s round-trip; HTML-editor preview refresh ≤ 1.5 s after typing stops | Manual timing in UAT |
 | NFR-PERF-13 | Reader runtime | ≤ 8 KB gzip, immutable cache; < 5 ms main-thread work before first paint; no layout shift from the chip | Size check in CI; Lighthouse on a topic page |
 | NFR-PERF-14 | Reader API and panel | `/__api/progress` p95 ≤ 300 ms; a tick reaches the server ≤ 2 s after the click (online); `/me` LCP ≤ 2.5 s p75 | Synthetic checks; Speed Insights |
-| NFR-PERF-15 | Judge sync freshness | A newly linked handle shows first data ≤ 5 min (API judges, normal queue); "Sync now" completes ≤ 2 min p90 | Queue metrics in admin |
+| NFR-PERF-15 | Judge sync freshness (owner) | Daily runs for all API judges finish by 04:00 UTC; "Run now" for one platform completes ≤ 2 min p90 | `sync_runs` in admin |
 
 ## 2. Accessibility (`NFR-A11Y`)
 
@@ -73,7 +76,7 @@ field data (Vercel Speed Insights), measured on mobile unless stated.
 | NFR-SEC-09 | Secrets rotated on suspicion of leak and at least yearly; rotation runbook in [14 §8](14-devops-and-environments.md) |
 | NFR-SEC-10 | **Open registration is safe:** guests hold no admin capability; every user-owned table enforces `user_id = auth.uid()`; `/admin` returns 403 to guests (pgTAP + E2E) |
 | NFR-SEC-11 | Sign-up abuse controls: OAuth-only, disposable-domain blocklist, ban, per-user limits |
-| NFR-SEC-12 | Tokens (CLI and extension) are hashed at rest, scoped, expiring and revocable; guests can only hold `cp:ingest` |
+| NFR-SEC-12 | Tokens (bundle CLI, owner's CP extension) are admin-only, hashed at rest, scoped, expiring and revocable; guests hold no tokens |
 
 ## 5. Privacy (`NFR-PRIV`)
 
@@ -85,9 +88,9 @@ field data (Vercel Speed Insights), measured on mobile unless stated.
 | NFR-PRIV-04 | A `/privacy` page states what's collected (contact form, aggregate analytics, **accounts, progress, judge handles and solves, extension data**), why, how long, and how to export or delete it |
 | NFR-PRIV-05 | The phone number and personal address are not public by default (the CV has them; the site doesn't need them) |
 | NFR-PRIV-06 | YouTube embeds load `youtube-nocookie.com`, and only after an explicit click (facade pattern — the reference bundle already does this) |
-| NFR-PRIV-07 | **Data minimisation for guests:** only email, display name and avatar from the provider; no source code from extension submissions; no judge passwords or cookies ever |
+| NFR-PRIV-07 | **Data minimisation for guests:** only email, display name and avatar from the provider, plus their reading progress. No judge handles or CP data are collected from guests |
 | NFR-PRIV-08 | Self-service export (JSON) and deletion; deletion completes ≤ 30 days; sessions and tokens revoked immediately |
-| NFR-PRIV-09 | Admin sees guests' reading and CP data only as aggregates; individual views are limited to account metadata needed for moderation |
+| NFR-PRIV-09 | Admin sees guests' reading data only as aggregates; individual views are limited to account metadata needed for moderation |
 | NFR-PRIV-10 | Inactive accounts: notice after 24 months, deletion 30 days later (`Q-34`) |
 
 ## 6. Reliability & availability (`NFR-REL`)
@@ -129,8 +132,8 @@ field data (Vercel Speed Insights), measured on mobile unless stated.
 |---|---|---|
 | Page views | < 50k/month | CDN caching; almost all traffic is cache hits |
 | Registered readers | < 2,000; < 500 active monthly | OAuth-only sign-up; Supabase free tier allows 50k MAU |
-| DB size | Up to ~300 MB worst case (guest `cp_solves` and `reading_progress` dominate, [07 §11](07-database-design.md)) | Free tier 500 MB; upgrade trigger at 350 MB; only accepted solves stored |
-| Judge sync | ≤ 600 account syncs/hour (Codeforces budget is the bottleneck) | Queue + per-platform budgets; pause syncs for inactive users |
+| DB size | Up to ~150 MB worst case (guest `reading_progress` dominates, [07 §11](07-database-design.md)) | Free tier 500 MB; upgrade trigger at 350 MB |
+| Judge sync | The owner's ~10 accounts; ~20–60 API calls/day | Per-platform budgets and daily staggered runs |
 | Storage | Topics ≈ 2.3 MB each → ~150 MB for 66; posts 0.2–3 MB each; media ~200 MB | Free tier 1 GB; content-addressed dedupe; upgrade trigger at 70% |
 | Egress | Topics, posts and media served through the Vercel CDN, so Supabase egress stays low; the reader API is small JSON | Monitor monthly; upgrade trigger at 70% |
 
