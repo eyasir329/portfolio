@@ -7,6 +7,12 @@
 >
 > **Revision 0.3:** no CP queue/worker (owner-only daily runs per platform); guest data is reading
 > progress only.
+>
+> **Revision 0.5:** refined by the engineering playbook: a stable **staging** alias between previews
+> and production, and an approval-gated release workflow that migrates before it deploys
+> ([DEV-05](dev/dev-05-cicd-and-release.md), ADR-022, replacing the Git-integration production deploys in §5).
+> The Supabase workflow is in [DEV-03](dev/dev-03-supabase-workflow.md) (staging project `kahrpgvddpukjbwdxhlq`, `Q-43`),
+> runbooks in [DEV-06](dev/dev-06-operations.md) (superseding §8), local set-up in [DEV-01](dev/dev-01-toolchain-and-ai-tooling.md) (expanding §11).
 
 ---
 

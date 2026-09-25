@@ -1,6 +1,6 @@
 # 21 — Audit Checklist, Open Questions & Sign-off
 
-> Status: **Awaiting owner audit (revision 0.4)** · This is the gate between planning (P0) and
+> Status: **Awaiting owner audit (revision 0.5)** · This is the gate between planning (P0) and
 > building (P1). Nothing is implemented until this page is signed. What changed across revisions:
 > [CHANGELOG](CHANGELOG.md).
 
@@ -41,13 +41,15 @@
 | 19 | Guest accounts, reader panel & progress | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | 20 | CP tracking (owner, 10 judges) | ☐ ✅ ☐ ✎ ☐ ❌ | |
 | UX | UI/UX design documentation ([ux/](ux/README.md), UX-00…UX-09; detailed per-document sheet in [UX-09 §7](ux/ux-09-ux-audit.md)) | ☐ ✅ ☐ ✎ ☐ ❌ | |
+| DEV | Engineering playbook ([dev/](dev/README.md), DEV-01…DEV-07): toolchain and Supabase MCP, conventions, Supabase workflow, phase plans, CI/CD, operations, quality gates | ☐ ✅ ☐ ✎ ☐ ❌ | |
 
 **Final approval:** ☐ Approved to start Phase 1 · Name: ____________ · Date: ____________
 
 ## 3. Decisions only the owner can make
 
 Questions marked **(new)** or **(changed)** come from revisions 0.2/0.3; Q-37…Q-42 **(UX)** come from
-the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)).
+the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)); Q-43…Q-46 **(DEV)** come from the
+engineering playbook in revision 0.5 ([dev/](dev/README.md)).
 
 | ID | Question | Options | Recommended default | Answer |
 |---|---|---|---|---|
@@ -93,6 +95,10 @@ the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)).
 | Q-40 **(UX)** | Nav label for the CP page (UXF-16) | "CP" / "CP Journey" / "Competitive Programming" | "CP" on desktop, "CP Journey" in the mobile sheet; confirmed by the card sort | |
 | Q-41 **(UX)** | Collapse "Activity" on the CP page on phones (UXF-17) | collapsed / expanded | Collapsed | |
 | Q-42 **(UX)** | Which screens get hi-fi mock-ups in P1 | the 6 in UX-00 §7 / all public screens | The 6 in UX-00 §7 | |
+| Q-43 **(DEV)** | Role of the connected Supabase project `kahrpgvddpukjbwdxhlq` | staging / production | **Staging** (the MCP server with write-capable tools stays off production; production is a new project created in P1) | |
+| Q-44 **(DEV)** | Supabase MCP access to **production** | none / read-only (`read_only=true`, docs + debugging only, user scope) | **None** at launch; read-only only during incidents if needed | |
+| Q-45 **(DEV)** | Supabase plan for production | Free at launch, Pro on the triggers in 14 §9 / Pro from launch (PITR, no pausing, daily backups, branching) | Free at launch, Pro on triggers | |
+| Q-46 **(DEV)** | How production deploys | approval-gated release workflow, migrate then deploy (ADR-022) / Vercel Git auto-deploy from `main` | **Release workflow** | |
 
 ## 4. Area checklists
 
@@ -149,6 +155,14 @@ the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)).
 - [ ] Components/states, microcopy (UX-07) and the keyboard/motion/a11y specs (UX-08) are acceptable
 - [ ] UX audit findings accepted; Q-37…Q-42 answered (UX-09)
 
+### DEV — Engineering playbook (revision 0.5)
+- [ ] The Supabase MCP set-up and least-privilege rules are acceptable (DEV-01 §4–6); I will authenticate the server locally
+- [ ] Staging/production project split and the per-environment auth table are right (DEV-03 §1, §6)
+- [ ] The phase plans, option B calendar and staged rollouts match how I want to release (DEV-04)
+- [ ] Approval-gated release workflow and the flags table are acceptable (DEV-05)
+- [ ] Runbooks, rotation calendar and phase gates PG-1…PG-8 are realistic for a solo project (DEV-06, DEV-07)
+- [ ] Q-43…Q-46 answered
+
 ### 14–18
 - [ ] Cost triggers (DB growth from guest reading progress; reader-API invocations) are acceptable
 - [ ] Estimate ≈ 135 days (+20%) and option B ordering are realistic
@@ -158,8 +172,8 @@ the UX audit in revision 0.4 ([UX-09 §5](ux/ux-09-ux-audit.md)).
 ## 5. After sign-off
 
 1. Create GitHub Issues from the backlog ([16 §4](16-delivery-plan.md)).
-2. Run spikes SP-01 … SP-11 and record results as ADR updates (SP-08 updates the judge matrix;
-   SP-09 confirms the runtime approach).
-3. Scaffold (US-100 …) on a feature branch; the first PR includes wireframes, the essay template
-   draft and 3D stills.
-4. Weekly demos; each phase closes with its UAT scripts.
+2. Run spikes SP-01 … SP-13 and record results as ADR updates (SP-08 updates the judge matrix;
+   SP-09 confirms the runtime approach; SP-12/13 confirm the Supabase tooling and release pipeline).
+3. Scaffold (US-100 …) on a feature branch following [DEV-04 §3](dev/dev-04-phase-plans.md); the first PR
+   includes wireframes, the essay template draft and 3D stills.
+4. Weekly demos on staging; each phase closes with its gate PG-n ([DEV-07 §3](dev/dev-07-quality-gates.md)).

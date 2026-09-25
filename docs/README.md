@@ -1,13 +1,13 @@
 # Planning Documentation — Index
 
-> **Document set version:** 0.4 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
+> **Document set version:** 0.5 (draft for owner audit) · **Date:** 2026-09-25 · [CHANGELOG](CHANGELOG.md)
 > **Owner / Product Owner:** Eyasir Ahamed · **Prepared as:** business analysis & system design, pre-implementation
 
 This folder is the single source of truth for **what** will be built, **why**, and **how** it will be
 built, operated and verified. Nothing has been implemented yet. Every document can be checked by
 hand before code exists.
 
-**Where the plan stands (revision 0.4):**
+**Where the plan stands (revision 0.5):**
 - Blog posts are **full HTML**, rendered exactly as written on the content origin, and authored in
   an admin HTML editor or uploaded.
 - Readers can create **guest accounts** (Google/GitHub). **Roadmap progress is saved only for
@@ -18,6 +18,9 @@ hand before code exists.
 - **UI/UX design** is documented in [`ux/`](ux/README.md): wireframes for all 58 screens, flows,
   components and states, interaction/motion/accessibility, and a UX audit with its own sign-off
   (added in 0.4).
+- **How it gets built and shipped** is in [`dev/`](dev/README.md): toolchain and the Supabase MCP server
+  now configured in this repository, the Supabase workflow, a development and deployment plan for
+  every phase, CI/CD, operations and quality gates (added in 0.5).
 
 ---
 
@@ -48,6 +51,7 @@ hand before code exists.
 | 21 | [20 — CP tracking (owner, 10 judges)](20-cp-multi-platform-tracking.md) | **New:** judge capability matrix, adapters, daily per-platform runs, the owner's extension |
 | 22 | [21 — Audit checklist](21-audit-checklist.md) | **Sign-off sheet and the decisions only you can make** |
 | 23 | [ux/ — UI/UX design documentation](ux/README.md) | **New in 0.4:** strategy, flows, wireframes of every page (UX-00…06), components & states (UX-07), interaction, motion & accessibility (UX-08), UX audit & sign-off (UX-09) |
+| 24 | [dev/ — Engineering playbook](dev/README.md) | **New in 0.5:** toolchain & Supabase MCP (DEV-01), conventions (DEV-02), Supabase workflow (DEV-03), phase-by-phase build & deploy plans (DEV-04), CI/CD & release (DEV-05), operations (DEV-06), quality gates (DEV-07) |
 
 **30-minute path:** CHANGELOG → 00 → 01 §3.7–3.11 → 19 §1–3 → 20 §2 → 21 §3.
 
@@ -78,6 +82,9 @@ UX-06 WF-64 HTML editor → UX-09 §1–5.
 | `Mn` | Motion spec | ux/UX-08 | `M12` Hero 3D idle |
 | `UXF-nn` | UX audit finding | ux/UX-09 | `UXF-04` Chip overlap |
 | `UXQ-nn` | Open UX question (mirrored as `Q-37…42`) | ux/UX-09 | `UXQ-01` CV link on desktop |
+| `DEV-nn` | Engineering playbook document | dev/ | `DEV-04` Phase plans |
+| `PG-n` | Phase gate | dev/DEV-07 | `PG-5` Reader accounts |
+| `RB-nn` | Operations runbook | dev/DEV-06 | `RB-12` Reader runtime incident |
 
 **MoSCoW:** M Must · S Should · C Could · W Won't (v1). **Status:** Draft → In review → Approved →
 Superseded.

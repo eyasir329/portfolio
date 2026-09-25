@@ -209,6 +209,9 @@ many users**) · S2 Major · S3 Minor · S4 Trivial. Responses as before.
 
 ## 8. Definition of Done
 
+> **Revision 0.5:** the per-PR checklist, deploy checklists and phase gates PG-1…PG-8 are in
+> [DEV-07](dev/dev-07-quality-gates.md).
+
 As in revision 0.1, plus: for anything touching guest data, an RLS test and a privacy-page check;
 for runtime changes, T-RT-01…10 green on the reference bundle; for adapter changes, updated fixtures.
 

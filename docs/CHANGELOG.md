@@ -1,5 +1,24 @@
 # Planning Changelog
 
+## Revision 0.5 — 2026-09-25
+
+Requested by the owner: **connect the Supabase MCP server (project `kahrpgvddpukjbwdxhlq`) and the
+Supabase agent skills, then plan, as a senior full-stack developer, how every phase is developed and
+deployed, still without application code.**
+
+| Area | Before (0.4) | Now (0.5) | Where |
+|---|---|---|---|
+| Developer tooling | None in the repository | `.mcp.json` (Supabase MCP, project-scoped, added with `claude mcp add --scope project`); `.claude/skills/supabase` and `supabase-postgres-best-practices` + `skills-lock.json` (installed with `npx skills add supabase/agent-skills`, reviewed: Markdown only) | root, DEV-01 |
+| Engineering playbook | DevOps summary in 14; phases and backlog in 16 | New [`dev/`](dev/README.md) folder: toolchain and AI-agent safety (DEV-01), conventions (DEV-02), Supabase workflow (DEV-03), phase plans with build order, schema, tests, flags, deploy, demo, exit and rollback for P1…P8 (DEV-04), CI/CD and release (DEV-05), operations with runbooks RB-01…16 (DEV-06), quality gates PG-1…8 (DEV-07) | dev/ |
+| Environments | Local, preview, production | **Staging** added as a stable alias (`staging.` / `read.staging.`) on the staging Supabase project; the connected project `kahrpgvddpukjbwdxhlq` is planned as staging (`Q-43`) | DEV-03, DEV-05, 14, ADR-012 |
+| Release process | Vercel Git integration deploys production on merge | Approval-gated release workflow: migrate then deploy, staging first (ADR-022, `Q-46`) | DEV-05, 14, 17 |
+| Migrations | One logical list in 07 §10 | Introduced per phase; RLS and pgTAP in the same file; CLI-generated names; expand → migrate → contract | DEV-03, 07 |
+| AI access | — | MCP on staging only; permissions deny migrations, deploys and branch tools; production not connected (`Q-44`); ADR-021; risk R-24 | DEV-01, 17 |
+| Spikes | SP-01…SP-11 | SP-12 (Supabase tooling) and SP-13 (release pipeline), inside US-102/US-103: estimate unchanged at ≈ 135 dev-days | 16 |
+| Runbooks | 14 §8 | Superseded by DEV-06 (16 runbooks, incident process, rotation and maintenance calendars) | 14, DEV-06 |
+| Owner questions | Q-01…Q-42 | **Q-43…Q-46 (DEV)**: role of the connected project, production MCP access, production plan, release model | 21 §3 |
+| Consistency fix | R-02 mitigation mentioned an "every-minute worker" removed in 0.3 | Now "daily scheduled jobs + uptime pings; RB-01" | 17 |
+
 ## Revision 0.4 — 2026-09-25
 
 Requested by the owner: **complete UI/UX design documentation for every page, with proper

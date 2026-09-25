@@ -7,6 +7,10 @@
 >
 > **Revision 0.3:** learner CP tracking removed; ADR-017/018 apply to the owner's accounts only;
 > ADR-019 revised (no queue); R-13, R-19, R-21 downgraded.
+>
+> **Revision 0.5:** engineering playbook ([`dev/`](dev/README.md)); ADR-012 records the connected staging
+> project; ADR-021 (Supabase MCP and agent skills, least privilege) and ADR-022 (approval-gated
+> release workflow) added; risks R-24 and R-25 added.
 
 ---
 
@@ -17,7 +21,7 @@ L = likelihood, I = impact (1–3). Score = L × I.
 | ID | Risk | L | I | Score | Mitigation | Owner |
 |---|---|:-:|:-:|:-:|---|---|
 | R-01 | **Scope is large for one developer** (≈ 135 dev-days) | 3 | 3 | 9 | Phased releases; option B "readers first" (v1 at ≈ 21 weeks, then owner CP tracking and 3D as v1.1); strict MoSCoW | Owner |
-| R-02 | Supabase free project pauses | 1 | 3 | 3 | Every-minute worker + uptime pings; runbook | Dev |
+| R-02 | Supabase free project pauses | 1 | 3 | 3 | Daily scheduled jobs + uptime pings; runbook RB-01 ([DEV-06](dev/dev-06-operations.md)) | Dev |
 | R-03 | Copyright exposure from `data/` excerpts | 2 | 3 | 6 | Private by default (`Q-14`) | Owner |
 | R-04 | 3D hurts performance/accessibility | 2 | 2 | 4 | Gate, posters, budgets | Dev |
 | R-05 | **Judge endpoints change or block us** (unofficial APIs, scraping, Cloudflare) | 3 | 2 | 6 | API-first; NEUPC-proven endpoints; per-platform kill switches; "needs extension" state; weekly contract checks; SP-08 | Dev |
@@ -39,6 +43,8 @@ L = likelihood, I = impact (1–3). Score = L × I.
 | R-21 | **Extension maintenance burden** (judge DOM changes break content scripts) | 1 | 1 | 1 | Only the owner uses it; reuse the NEUPC extension (one codebase for both projects); optional | Owner |
 | R-22 | **Terms-of-service complaints from a judge** about automated reads | 1 | 2 | 2 | Public pages only, low frequency, identified client, robots.txt, immediate kill switch | Owner |
 | R-23 | **Blog SEO** on a subdomain instead of the main domain | 2 | 1 | 2 | Main-domain redirects, sitemaps, cross-links; revisit after 6 months of Search Console data (`Q-27`) | Owner |
+| R-24 | **An AI agent or MCP tool changes or exposes data** in a shared Supabase project (wrong project, destructive SQL, prompt injection from stored content) | 2 | 3 | 6 | MCP connected to staging only (`Q-43`, `Q-44`); Claude Code permissions deny migration/deploy/branch tools and ask for `execute_sql`; schema only via CI migrations; nightly backups; RB-15 ([DEV-01 §6](dev/dev-01-toolchain-and-ai-tooling.md)) | Dev |
+| R-25 | **Migration and app deploy drift out of order** (app live before its schema, or a destructive migration breaks the running app) | 2 | 2 | 4 | Release workflow migrates then deploys per environment; expand → migrate → contract; staging first; approval gate (ADR-022, [DEV-05 §5](dev/dev-05-cicd-and-release.md)) | Dev |
 
 ## Part B — Architecture Decision Records
 
@@ -103,7 +109,8 @@ Unchanged; now also triggers the daily per-platform CP runs.
 Unchanged.
 
 ### ADR-012 — Two Supabase projects (staging, production)
-Unchanged.
+Unchanged. **Revision 0.5:** the existing project `kahrpgvddpukjbwdxhlq` is planned as **staging**
+(`Q-43`); production is a new project created in P1 ([DEV-03 §1](dev/dev-03-supabase-workflow.md)).
 
 ### ADR-013 — Server Actions for UI mutations; route handlers for external callers
 Unchanged; external callers now include the reader runtime, the browser extension and the CLI.
@@ -175,6 +182,31 @@ Unchanged; external callers now include the reader runtime, the browser extensio
 - **Consequences:** One pipeline, one serving path, one set of tests; a polymorphic FK is enforced by
   trigger.
 
+### ADR-021 — Supabase MCP server and agent skills for development, with least privilege
+- **Context:** The owner wants AI-assisted development with Supabase's MCP server and agent skills.
+  The MCP server can run SQL, apply migrations and deploy functions on a connected project.
+- **Decision:** Commit a project-scoped `.mcp.json` pointing at the **staging** project only, and the
+  `supabase` and `supabase-postgres-best-practices` skills under `.claude/skills/`. Agents may read
+  schema, logs and advisors and run read queries (with approval); migrations, deploys and branch
+  operations are denied in `.claude/settings.json`. Production is not connected, or read-only only
+  (`Q-44`). CI uses scoped access tokens, never personal OAuth sessions.
+- **Alternatives:** No MCP (slower debugging, less current docs); MCP on production with write access
+  (rejected: R-24).
+- **Consequences:** Faster, documentation-backed Supabase work; one more permission file to maintain;
+  `SP-12` verifies tool names and the local MCP endpoint before the rules are final.
+
+### ADR-022 — Approval-gated release workflow: migrate, then deploy
+- **Context:** With Vercel's Git integration, a merge to `main` deploys production at the same time
+  as the migration job runs, so code can go live before its schema.
+- **Decision:** Vercel's Git integration builds **previews only**. A GitHub Actions release workflow
+  runs on every merge: migrate staging → deploy the staging alias → smoke tests → owner approval →
+  migrate production → deploy production (`vercel deploy --prebuilt --prod`) → smoke tests.
+- **Alternatives:** Git-integration production deploys with migrations applied first by hand (error-
+  prone); Supabase's GitHub integration for migrations (less control over ordering with the app deploy)
+  (`Q-46`).
+- **Consequences:** A stable staging environment for demos and cron; one approval click per
+  production release; `SP-13` confirms the Vercel CLI flow on the Hobby plan.
+
 ## Part C — Decision log
 
 | Date | ID | Decision | By |
@@ -182,3 +214,4 @@ Unchanged; external callers now include the reader runtime, the browser extensio
 | 2026-09-24 | ADR-001…013 | Proposed (revision 0.1) | Planning |
 | 2026-09-25 | ADR-003, 004, 005 revised; 007 narrowed; ADR-014…020 added | Proposed (revision 0.2): HTML blog, guest accounts, 10-judge tracking | Planning |
 | 2026-09-25 | ADR-017, 018 narrowed to owner-only; ADR-019 revised (no queue) | Proposed (revision 0.3): learner CP tracking removed | Owner request |
+| 2026-09-25 | ADR-012 note; ADR-021, ADR-022 added | Proposed (revision 0.5): Supabase MCP/skills connected; engineering playbook | Owner request |

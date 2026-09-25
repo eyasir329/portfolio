@@ -8,6 +8,10 @@
 >
 > **Revision 0.3:** learner CP tracking removed (no `/me/cp`, guest judge sync, extension tokens or
 > practice auto-verification; no CP queue). Estimate **≈ 135 developer-days**.
+>
+> **Revision 0.5:** how each phase is built and deployed is detailed in the engineering playbook
+> ([DEV-04](dev/dev-04-phase-plans.md)). Two spikes added (SP-12, SP-13), time-boxed inside US-102 and
+> US-103, so the estimate is unchanged (if they overrun, P1 grows by up to 1 day).
 
 Estimates are **ideal developer-days** for one developer with AI assistance, ±30%.
 
@@ -65,6 +69,8 @@ flowchart LR
 | SP-09 | **Runtime compatibility:** prototype the storage guard + `change`-event reconciliation on the reference bundle (anonymous gating, signed-in sync, no flash) | 1 d |
 | SP-10 | **NEUPC extension compatibility:** point the existing extension at a stub of the ingestion aliases; confirm payloads and auth | 0.5 d |
 | SP-11 | **Session bridge on preview deployments** (preview hosts, cookie prefixes, return URL allowlist) | 0.5 d |
+| SP-12 | **Supabase tooling:** authenticate the MCP server; record the staging project's region and Postgres version; verify MCP tool names for the permission rules; local MCP endpoint; `supabase config push`; CLI ≥ 2.81.3 advisors ([DEV-01 §4–6](dev/dev-01-toolchain-and-ai-tooling.md)) | 0.5 d (inside US-102) |
+| SP-13 | **Release pipeline:** Vercel prebuilt production deploys from GitHub Actions after migrations; staging alias; E2E protection bypass on the Hobby plan ([DEV-05](dev/dev-05-cicd-and-release.md)) | 0.5 d (inside US-103) |
 
 ## 3. Epics
 

@@ -460,6 +460,10 @@ pgTAP tests cover every row of this matrix (T-DB-*, T-GU-*).
 
 ## 10. Migrations & seed
 
+> **Revision 0.5:** the groups below are **logical**. They are introduced phase by phase, each file
+> creating its tables together with their RLS policies and pgTAP tests (no separate "RLS later"
+> migration), with CLI-generated timestamped names. See [DEV-03 §4–5](dev/dev-03-supabase-workflow.md).
+
 1. `0001_extensions_enums` → `0002_core` → `0003_portfolio` → `0004_accounts` (user_profiles,
    sessions, bridge codes, tokens) → `0005_bundles` → `0006_kb` → `0007_blog` → `0008_cp` →
    `0009_progress` → `0010_system` → `0011_rls` → `0012_functions_triggers` → `0013_storage` →

@@ -1,6 +1,6 @@
 # Eyasir Ahamed — Portfolio, Blog, Roadmap Docs & Reader Progress
 
-> **Status: Phase 0 — Planning & audit (revision 0.4).**
+> **Status: Phase 0 — Planning & audit (revision 0.5).**
 > This repository currently contains **planning documents only**. No application code has been
 > scaffolded, installed or run. Implementation starts after the owner signs off
 > [`docs/21-audit-checklist.md`](docs/21-audit-checklist.md) and the UX sign-off in
@@ -58,3 +58,21 @@ sign-off sheet.
 | UX-02 | [Layout, grid & global shell](docs/ux/ux-02-layout-and-shell.md) | UX-07 | [Components & states](docs/ux/ux-07-components-and-states.md) |
 | UX-03 | [Wireframes: public portfolio](docs/ux/ux-03-wireframes-public.md) | UX-08 | [Interaction, motion & accessibility](docs/ux/ux-08-interaction-motion-a11y.md) |
 | UX-04 | [Wireframes: blog, docs & reading room](docs/ux/ux-04-wireframes-blog-docs.md) | UX-09 | [UX audit & sign-off](docs/ux/ux-09-ux-audit.md) |
+
+### Engineering playbook
+
+**[`docs/dev/`](docs/dev/README.md)** explains how every phase is developed, tested, deployed and operated:
+
+| # | Document | # | Document |
+|---|---|---|---|
+| DEV-01 | [Toolchain, workspace & AI tooling](docs/dev/dev-01-toolchain-and-ai-tooling.md) | DEV-05 | [Environments, CI/CD & release](docs/dev/dev-05-cicd-and-release.md) |
+| DEV-02 | [Repository, conventions & workflow](docs/dev/dev-02-repo-conventions-and-workflow.md) | DEV-06 | [Operations handbook](docs/dev/dev-06-operations.md) |
+| DEV-03 | [Supabase workflow (CLI + MCP)](docs/dev/dev-03-supabase-workflow.md) | DEV-07 | [Quality gates & checklists](docs/dev/dev-07-quality-gates.md) |
+| DEV-04 | [Phase-by-phase development & deployment plan](docs/dev/dev-04-phase-plans.md) | | |
+
+### Developer tooling already configured
+
+| File | Purpose |
+|---|---|
+| [`.mcp.json`](.mcp.json) | Supabase MCP server for Claude Code, scoped to the staging project. Approve and authenticate it with `claude` → `/mcp` → *supabase* → *Authenticate* ([DEV-01 §4](docs/dev/dev-01-toolchain-and-ai-tooling.md)) |
+| [`.claude/skills/`](.claude/skills/), [`skills-lock.json`](skills-lock.json) | Supabase agent skills (`supabase`, `supabase-postgres-best-practices`) installed with `npx skills add supabase/agent-skills` |
